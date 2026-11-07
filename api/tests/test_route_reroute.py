@@ -335,3 +335,21 @@ def test_short_flagged_run_can_still_be_cleared_entirely():
     assert result.status == "found"
     assert result.comparison.original_flagged_m <= 45
     assert result.comparison.alternative_flagged_m == 0
+
+
+def test_corridor_is_a_fence_not_just_a_bounding_box():
+    # On a diagonal route, the search box's corners are outside the corridor. A flagged strip
+    # crosses the route with its only gap in such a corner: about 280 to 400 m off the line.
+    forecast = forecast_rated(HIGH)
+    grids = flat_grids()
+    rows, cols = np.mgrid[0:SIZE, 0:SIZE]
+    strip = np.abs(rows + cols - 2 * MID_ROW) <= 2
+    gap = (cols - rows > 2 * 20) & (cols - rows < 2 * 28)
+    grids.slope[strip & ~gap] = 35
+    route = LineString(
+        coordinates=[lng_lat(MID_ROW - 100, MID_ROW - 100), lng_lat(MID_ROW + 100, MID_ROW + 100)]
+    )
+    assert run(forecast, grids, route=route, width=200).status == "no_line"
+    wider = run(forecast, grids, route=route, width=800)
+    assert wider.status == "found"
+    assert wider.comparison.alternative_flagged_m == 0
