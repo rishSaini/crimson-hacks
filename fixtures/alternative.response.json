@@ -1,0 +1,62 @@
+{
+  "date": "2026-01-15",
+  "source": "fixture",
+  "status": "found",
+  "corridor_width_m": 400,
+  "avoid_at_or_above": "considerable",
+  "message": "This line avoids most of the terrain flagged by this forecast. It does not remove avalanche risk.",
+  "alternative": {
+    "type": "LineString",
+    "coordinates": [
+      [
+        -111.6376,
+        40.5905
+      ],
+      [
+        -111.640918,
+        40.583578
+      ],
+      [
+        -111.64063,
+        40.58234
+      ],
+      [
+        -111.643184,
+        40.580113
+      ],
+      [
+        -111.640005,
+        40.580401
+      ],
+      [
+        -111.641923,
+        40.578454
+      ],
+      [
+        -111.638744,
+        40.578741
+      ],
+      [
+        -111.640661,
+        40.576794
+      ],
+      [
+        -111.636845,
+        40.577361
+      ],
+      [
+        -111.63039,
+        40.574531
+      ]
+    ]
+  },
+  "comparison": {
+    "original_flagged_m": 640,
+    "alternative_flagged_m": 90,
+    "added_distance_m": 1100,
+    "added_climb_ft": 180,
+    "max_deviation_m": 311
+  },
+  "fallbacks": [],
+  "turnaround_point": null
+}

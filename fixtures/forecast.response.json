@@ -1,0 +1,213 @@
+{
+  "zone": "salt-lake",
+  "date": "2026-01-15",
+  "source": "fixture",
+  "overall_danger": "considerable",
+  "ratings_issued": true,
+  "rose": [
+    {
+      "index": 0,
+      "band": "upper",
+      "aspect": "N",
+      "value": 6,
+      "danger": "considerable",
+      "pockets": false
+    },
+    {
+      "index": 1,
+      "band": "upper",
+      "aspect": "NE",
+      "value": 6,
+      "danger": "considerable",
+      "pockets": false
+    },
+    {
+      "index": 2,
+      "band": "upper",
+      "aspect": "E",
+      "value": 6,
+      "danger": "considerable",
+      "pockets": false
+    },
+    {
+      "index": 3,
+      "band": "upper",
+      "aspect": "SE",
+      "value": 4,
+      "danger": "moderate",
+      "pockets": false
+    },
+    {
+      "index": 4,
+      "band": "upper",
+      "aspect": "S",
+      "value": 4,
+      "danger": "moderate",
+      "pockets": false
+    },
+    {
+      "index": 5,
+      "band": "upper",
+      "aspect": "SW",
+      "value": 4,
+      "danger": "moderate",
+      "pockets": false
+    },
+    {
+      "index": 6,
+      "band": "upper",
+      "aspect": "W",
+      "value": 4,
+      "danger": "moderate",
+      "pockets": false
+    },
+    {
+      "index": 7,
+      "band": "upper",
+      "aspect": "NW",
+      "value": 5,
+      "danger": "considerable",
+      "pockets": true
+    },
+    {
+      "index": 8,
+      "band": "mid",
+      "aspect": "N",
+      "value": 6,
+      "danger": "considerable",
+      "pockets": false
+    },
+    {
+      "index": 9,
+      "band": "mid",
+      "aspect": "NE",
+      "value": 6,
+      "danger": "considerable",
+      "pockets": false
+    },
+    {
+      "index": 10,
+      "band": "mid",
+      "aspect": "E",
+      "value": 4,
+      "danger": "moderate",
+      "pockets": false
+    },
+    {
+      "index": 11,
+      "band": "mid",
+      "aspect": "SE",
+      "value": 4,
+      "danger": "moderate",
+      "pockets": false
+    },
+    {
+      "index": 12,
+      "band": "mid",
+      "aspect": "S",
+      "value": 2,
+      "danger": "low",
+      "pockets": false
+    },
+    {
+      "index": 13,
+      "band": "mid",
+      "aspect": "SW",
+      "value": 2,
+      "danger": "low",
+      "pockets": false
+    },
+    {
+      "index": 14,
+      "band": "mid",
+      "aspect": "W",
+      "value": 4,
+      "danger": "moderate",
+      "pockets": false
+    },
+    {
+      "index": 15,
+      "band": "mid",
+      "aspect": "NW",
+      "value": 4,
+      "danger": "moderate",
+      "pockets": false
+    },
+    {
+      "index": 16,
+      "band": "lower",
+      "aspect": "N",
+      "value": 4,
+      "danger": "moderate",
+      "pockets": false
+    },
+    {
+      "index": 17,
+      "band": "lower",
+      "aspect": "NE",
+      "value": 4,
+      "danger": "moderate",
+      "pockets": false
+    },
+    {
+      "index": 18,
+      "band": "lower",
+      "aspect": "E",
+      "value": 2,
+      "danger": "low",
+      "pockets": false
+    },
+    {
+      "index": 19,
+      "band": "lower",
+      "aspect": "SE",
+      "value": 2,
+      "danger": "low",
+      "pockets": false
+    },
+    {
+      "index": 20,
+      "band": "lower",
+      "aspect": "S",
+      "value": 2,
+      "danger": "low",
+      "pockets": false
+    },
+    {
+      "index": 21,
+      "band": "lower",
+      "aspect": "SW",
+      "value": 2,
+      "danger": "low",
+      "pockets": false
+    },
+    {
+      "index": 22,
+      "band": "lower",
+      "aspect": "W",
+      "value": 2,
+      "danger": "low",
+      "pockets": false
+    },
+    {
+      "index": 23,
+      "band": "lower",
+      "aspect": "NW",
+      "value": 3,
+      "danger": "moderate",
+      "pockets": true
+    }
+  ],
+  "problems": [
+    {
+      "name": "Wind Drifted Snow",
+      "description": "FIXTURE TEXT. Fresh drifts on upper-elevation north and east aspects."
+    },
+    {
+      "name": "Persistent Weak Layer",
+      "description": "FIXTURE TEXT. A buried weak layer on upper and mid-elevation northerly aspects."
+    }
+  ],
+  "bottom_line": "FIXTURE TEXT, not a real forecast. Danger is Considerable on upper and mid-elevation slopes facing north through east.",
+  "forecast_url": "https://utahavalanchecenter.org/forecast/salt-lake"
+}

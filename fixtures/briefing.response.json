@@ -1,0 +1,16 @@
+{
+  "date": "2026-01-15",
+  "source": "fixture",
+  "items": [
+    {
+      "segment_id": 3,
+      "avalanche_problem": "Persistent Weak Layer",
+      "note": "FIXTURE TEXT. Segment 3 is low-angle, but it runs below steep slopes rated Considerable, so a slide from above could reach it."
+    },
+    {
+      "segment_id": 4,
+      "avalanche_problem": "Wind Drifted Snow",
+      "note": "FIXTURE TEXT. Segment 4 crosses 34 to 38 degree northeast slopes, where drifts are the main concern. Look for cracking and hollow-feeling snow."
+    }
+  ]
+}

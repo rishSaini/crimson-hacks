@@ -1,0 +1,20 @@
+{
+  "date": "2026-01-15",
+  "source": "fixture",
+  "status": "no_line",
+  "corridor_width_m": 400,
+  "avoid_at_or_above": "considerable",
+  "message": "No lower-exposure line within 400 m. A 310 m stretch faces northeast above 9,500 ft, rated Considerable.",
+  "alternative": null,
+  "comparison": null,
+  "fallbacks": [
+    "widen_corridor",
+    "turnaround_point",
+    "nearby_tours",
+    "least_exposure_line"
+  ],
+  "turnaround_point": [
+    -111.64063,
+    40.58234
+  ]
+}

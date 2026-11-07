@@ -1,0 +1,179 @@
+{
+  "date": "2026-01-15",
+  "source": "fixture",
+  "segments": {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [
+              -111.6376,
+              40.5905
+            ],
+            [
+              -111.640918,
+              40.583578
+            ]
+          ]
+        },
+        "properties": {
+          "id": 1,
+          "length_m": 820,
+          "slope_min_deg": 8,
+          "slope_max_deg": 24,
+          "elevation_min_ft": 8700,
+          "elevation_max_ft": 9050,
+          "aspects": [
+            "S",
+            "SW"
+          ],
+          "danger": "low",
+          "color": "gray",
+          "flagged": false,
+          "flag_reason": null
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [
+              -111.640918,
+              40.583578
+            ],
+            [
+              -111.64063,
+              40.58234
+            ]
+          ]
+        },
+        "properties": {
+          "id": 2,
+          "length_m": 140,
+          "slope_min_deg": 30,
+          "slope_max_deg": 32,
+          "elevation_min_ft": 9050,
+          "elevation_max_ft": 9120,
+          "aspects": [
+            "E"
+          ],
+          "danger": "low",
+          "color": "green",
+          "flagged": false,
+          "flag_reason": null
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [
+              -111.64063,
+              40.58234
+            ],
+            [
+              -111.638678,
+              40.579772
+            ]
+          ]
+        },
+        "properties": {
+          "id": 3,
+          "length_m": 330,
+          "slope_min_deg": 14,
+          "slope_max_deg": 22,
+          "elevation_min_ft": 9120,
+          "elevation_max_ft": 9700,
+          "aspects": [
+            "NE"
+          ],
+          "danger": "moderate",
+          "color": "gray",
+          "flagged": false,
+          "flag_reason": null
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [
+              -111.638678,
+              40.579772
+            ],
+            [
+              -111.636845,
+              40.577361
+            ]
+          ]
+        },
+        "properties": {
+          "id": 4,
+          "length_m": 310,
+          "slope_min_deg": 34,
+          "slope_max_deg": 38,
+          "elevation_min_ft": 9700,
+          "elevation_max_ft": 10100,
+          "aspects": [
+            "NE"
+          ],
+          "danger": "moderate",
+          "color": "yellow",
+          "flagged": false,
+          "flag_reason": null
+        }
+      },
+      {
+        "type": "Feature",
+        "geometry": {
+          "type": "LineString",
+          "coordinates": [
+            [
+              -111.636845,
+              40.577361
+            ],
+            [
+              -111.63039,
+              40.574531
+            ]
+          ]
+        },
+        "properties": {
+          "id": 5,
+          "length_m": 630,
+          "slope_min_deg": 12,
+          "slope_max_deg": 27,
+          "elevation_min_ft": 10100,
+          "elevation_max_ft": 10420,
+          "aspects": [
+            "SE",
+            "S"
+          ],
+          "danger": "moderate",
+          "color": "gray",
+          "flagged": false,
+          "flag_reason": null
+        }
+      }
+    ]
+  },
+  "totals": {
+    "length_m": 2230,
+    "climb_ft": 1720,
+    "steep_segment_count": 2,
+    "steep_length_m": 450,
+    "steep_ratings": [
+      "low",
+      "moderate"
+    ],
+    "flagged_length_m": 0,
+    "flagged_stretch_count": 0,
+    "max_flagged_danger": null
+  }
+}
