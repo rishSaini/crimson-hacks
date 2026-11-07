@@ -18,6 +18,7 @@ from app.route_analysis import TO_UTM, TerrainCoverageError, TerrainGrids, analy
 Difficulty = Literal['novice', 'easy', 'intermediate', 'advanced', 'expert', 'extreme']
 DIFFICULTIES = ('novice', 'easy', 'intermediate', 'advanced', 'expert', 'extreme')
 CATALOG_PATH = Path(__file__).resolve().parents[2] / 'data/routes/openskidata.geojson'
+WARNING_LIMITATION = 'UAC recommends avoiding all avalanche terrain today.'
 LIMITATIONS = [
     'Catalog features can represent only sections of a tour. Confirm the complete itinerary.',
     'Difficulty comes from OpenStreetMap piste tags. Snow conditions can change the required skills.',
@@ -110,7 +111,8 @@ class SuggestedRoute(ApiModel):
 class SuggestionsResponse(ApiModel):
     date: Date
     source: DataSource
-    avoid_at_or_above: AvoidThreshold
+    avoid_at_or_above: AvoidThreshold = Field(description='The setting actually applied')
+    forced_by_warning: bool
     status: Literal['found', 'no_match']
     message: str
     catalog: CatalogInfo
@@ -209,7 +211,8 @@ def suggest_routes(
     suggestions = accepted[:request.limit]
     return SuggestionsResponse(
         date=forecast.date, source=forecast.source,
-        avoid_at_or_above=request.avoid_at_or_above,
+        avoid_at_or_above=original.avoid_at_or_above,
+        forced_by_warning=original.forced_by_warning,
         status='found' if suggestions else 'no_match',
         message=(
             'Nearby mapped sections meet the selected grade, distance, climb, and exposure limits.'
@@ -219,5 +222,5 @@ def suggest_routes(
             **catalog.model_dump(exclude={'type', 'features'}), feature_count=len(catalog.features)
         ),
         original_analysis=original, suggestions=suggestions, excluded=excluded,
-        limitations=LIMITATIONS,
+        limitations=([WARNING_LIMITATION] if original.forced_by_warning else []) + LIMITATIONS,
     )

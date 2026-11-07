@@ -5,7 +5,7 @@ from affine import Affine
 from fastapi.testclient import TestClient
 
 from app import main
-from app.models import AnalyzeRequest, ForecastResponse, LineString
+from app.models import AnalyzeRequest, ForecastAlert, ForecastResponse, LineString
 from app.route_analysis import TO_UTM, TerrainCoverageError, TerrainGrids, analyze_route
 from app.route_suggestions import (
     Catalog, CatalogFeature, CatalogProperties, SourceReference, SuggestionsRequest,
@@ -185,6 +185,47 @@ def test_missing_operating_status_is_excluded(grids, forecast):
     candidate.properties.status = None
     result = suggest_routes(request(forecast), forecast, grids, catalog(candidate))
     assert result.excluded == {'operating_status_unknown_or_closed': 1}
+
+
+def with_alert(forecast, level):
+    alert = {'level': level}
+    if level != 'none':
+        alert.update(
+            what='w', where='w', what_to_do='w',
+            valid_from='2026-01-15T06:00:00-07:00', valid_to='2026-01-16T06:00:00-07:00',
+        )
+    return forecast.model_copy(update={'alert': ForecastAlert.model_validate(alert)})
+
+
+def test_warning_forces_low_and_flags_low_rated_steep_terrain(grids, forecast):
+    for cell in forecast.rose:
+        cell.value, cell.danger, cell.pockets = 2, 'low', False
+    grids.slope[101:104, 90:110] = 35
+    plan = AnalyzeRequest(route=route(102), date=forecast.date, avoid_at_or_above='considerable')
+    calm = analyze_route(plan, with_alert(forecast, 'none'), grids)
+    warned = analyze_route(plan, with_alert(forecast, 'warning'), grids)
+    assert (calm.avoid_at_or_above, calm.forced_by_warning) == ('considerable', False)
+    assert calm.totals.flagged_length_m == 0
+    assert (warned.avoid_at_or_above, warned.forced_by_warning) == ('low', True)
+    assert warned.totals.flagged_length_m > 0
+    assert plan.avoid_at_or_above == 'considerable'
+
+
+@pytest.mark.parametrize('level', ['none', 'watch', 'special_bulletin'])
+def test_other_alerts_keep_the_requested_setting(level, grids, forecast):
+    plan = AnalyzeRequest(route=route(), date=forecast.date, avoid_at_or_above='moderate')
+    result = analyze_route(plan, with_alert(forecast, level), grids)
+    assert (result.avoid_at_or_above, result.forced_by_warning) == ('moderate', False)
+
+
+def test_suggestions_on_a_warning_day_are_forced_and_carry_uac_advice(grids, forecast):
+    warned = with_alert(forecast, 'warning')
+    result = suggest_routes(request(forecast), warned, grids, catalog(feature('flat')))
+    assert (result.avoid_at_or_above, result.forced_by_warning) == ('low', True)
+    assert result.limitations[0] == 'UAC recommends avoiding all avalanche terrain today.'
+    assert result.suggestions[0].analysis.forced_by_warning is True
+    calm = suggest_routes(request(forecast), forecast, grids, catalog(feature('flat')))
+    assert 'UAC recommends avoiding all avalanche terrain today.' not in calm.limitations
 
 
 def test_suggestions_fixtures_match_contract():

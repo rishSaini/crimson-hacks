@@ -11,6 +11,7 @@ import rasterio
 from affine import Affine
 from pyproj import Transformer
 
+from app.forecast import effective_avoid_at_or_above
 from app.models import (
     AnalyzeRequest,
     AnalyzeResponse,
@@ -169,14 +170,17 @@ def analyze_route(
     climb_ft = sum(max(0, end - start) for start, end in zip(elevations, elevations[1:]))
     lengths = np.linalg.norm(np.diff(projected, axis=0), axis=1)
     rose = [cell.value for cell in forecast.rose]
+    threshold, forced_by_warning = effective_avoid_at_or_above(
+        request.avoid_at_or_above, forecast.alert.level
+    )
     samples = [
-        grids.sample(*midpoint, rose, request.avoid_at_or_above)
+        grids.sample(*midpoint, rose, threshold)
         for midpoint in (projected[:-1] + projected[1:]) / 2
     ]
 
     features = []
     first = 0
-    threshold_level = {"considerable": 3, "moderate": 2, "low": 1}[request.avoid_at_or_above]
+    threshold_level = {"considerable": 3, "moderate": 2, "low": 1}[threshold]
     for (level, overhead), group in groupby(
         samples, key=lambda sample: (sample.level, sample.overhead_level)
     ):
@@ -227,7 +231,8 @@ def analyze_route(
     return AnalyzeResponse(
         date=forecast.date,
         source=forecast.source,
-        avoid_at_or_above=request.avoid_at_or_above,
+        avoid_at_or_above=threshold,
+        forced_by_warning=forced_by_warning,
         segments=SegmentCollection(features=features),
         totals=totals,
     )
