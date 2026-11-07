@@ -10,7 +10,7 @@ Owns `web/`. Works against the fixture stubs until the real endpoints land.
 ## Hour 1 to 6: core loop
 
 - [ ] Click to drop waypoints on the 3D map, double-click to finish; the line drapes on terrain
-- [ ] Send the route to `POST /analyze` and recolor it by segment on return
+- [ ] Send the route and the user's current `avoid_at_or_above` to `POST /analyze`, and recolor it by segment on return
 - [ ] Draw every `color`, with `unrated` as a dashed magenta line and a "?" pin
 
 ## Hour 6 to 12: demo features
@@ -29,13 +29,15 @@ Owns `web/`. Works against the fixture stubs until the real endpoints land.
 
 - [ ] Overhead exposure markers
 - [ ] Flagged state: thicker line, one pulse, numbered pins, sticky banner, camera frames the route
-- [ ] Banner copy must not describe unrated meters as "rated Considerable": word mixed routes separately (`analyze.unrated.response.json`)
+- [ ] Banner copy must name the ratings actually flagged, which depend on the setting, and must not describe unrated meters as "rated Considerable": word mixed routes separately (`analyze.unrated.response.json`)
 - [ ] Reroute button at the bottom center of the map and the top of the side panel, the only filled button on screen, shown only if `flagged_stretch_count` is above 0. Start no later than hour 12: it's the demo's closing moment
-- [ ] Settings control for `avoid_at_or_above`, sent with every reroute: default `considerable`, "Also avoid Moderate" for `moderate`, and "Beginner mode: avoid all avalanche terrain" for `low`. The chosen rating counts in the comparison
+- [ ] Settings control for `avoid_at_or_above`, sent with every `POST /analyze` and `POST /alternative` call: default `considerable`, "Also avoid Moderate" for `moderate`, and "Beginner mode: stay off and out from under slopes 30° and steeper" for `low`, with the subtitle "Checks slopes on your route and within 300 m uphill." Changing it re-analyzes the route. The chosen rating counts in the comparison
+- [ ] No Beginner mode exception: read `flagged` from the server, and show the primary Reroute button if and only if flagged is above 0
 - [ ] Always show the meters a reroute leaves behind (`alternative_flagged_m`): a stricter setting doesn't guarantee a line that avoids everything (`alternative.avoid_low.response.json`)
 - [ ] Nothing to list: gray "No flags found on this route today." only if `steep_segment_count` is 0 and nothing is overhead-exposed
 - [ ] Only Low or Moderate steep segments (`analyze.low_only`, `analyze.moderate_only` and `analyze.low_moderate` fixtures): banner "N stretches in avalanche terrain, rated Low today (X m). Not rerouted by default.", with N from `steep_segment_count`, X from `steep_length_m`, the rating from `steep_ratings` ("Low", "Moderate" or "Low to Moderate"), and the listed segments below it
-- [ ] In that state, a secondary outline button "Avoid these too" that sets `avoid_at_or_above` to `steep_ratings[0]` and reruns the reroute, with no primary button. It shows on Low-only routes too
+- [ ] In that state, a secondary outline button "Avoid these too" that reruns the analysis and the reroute with `avoid_at_or_above` set to `steep_ratings[0]`, with no primary button. It shows on Low-only routes too. It applies to the current route only and never changes the saved setting
+- [ ] After an "Avoid these too" reroute, show a text link "Make this my default" on the comparison card. It updates the saved setting only when tapped
 - [ ] Rerouted state: original becomes a dashed gray ghost whatever its colors were, new line solid, comparison card, "Use this route" and "Undo"
 - [ ] Corridor slider, 200 to 800 m
 - [ ] No-line state (`alternative.no_line.response.json`): one plain sentence and the three one-tap choices, plus the "Show lowest-exposure line anyway" link with its red label

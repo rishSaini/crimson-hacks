@@ -66,8 +66,8 @@ Elevation bands: lower below 8,000 ft, mid 8,000 to 9,500 ft, upper above 9,500 
 | --- | --- | --- | --- | --- |
 | Under 30 degrees | Any | `gray` | Thin gray | Only if overhead-exposed |
 | 30 degrees or more | No rating | `unrated` | Dashed magenta, "?" pin | Yes |
-| 30 degrees or more | Low | `green` | Green | No |
-| 30 degrees or more | Moderate | `yellow` | Yellow | No |
+| 30 degrees or more | Low | `green` | Green | Only at `low` |
+| 30 degrees or more | Moderate | `yellow` | Yellow | At `moderate` or `low` |
 | 30 degrees or more | Considerable | `orange` | Orange | Yes |
 | 30 degrees or more | High | `red` | Red | Yes |
 | 30 degrees or more | Extreme | `black` | Black, white edge | Yes |
@@ -75,21 +75,25 @@ Elevation bands: lower below 8,000 ft, mid 8,000 to 9,500 ft, upper above 9,500 
 There are two levels:
 
 - **Listed:** every segment of 30 degrees or more appears in the summary with its rating, Moderate and Low included.
-- **Flagged:** reroute targets by default. These are Considerable or higher, unrated 30 degrees or more, and overhead exposure. `flagged` drives the banner, the Reroute button and the flagged-meter counts.
+- **Flagged:** reroute targets under the user's `avoid_at_or_above` setting: `considerable` (default), `moderate` or `low`. These are 30 degree or steeper segments at or above that rating, unrated 30 degrees or more at every setting, and overhead exposure. `flagged` drives the banner, the Reroute button and the flagged-meter counts.
 
-`avoid_at_or_above` on `POST /alternative` sets what a reroute avoids: `considerable` (default), `moderate` or `low`. Unrated 30 degrees or more is always avoided, whatever this is set to. It doesn't change `flagged`, which `/analyze` always computes the same way. Settings exposes `moderate` as "Also avoid Moderate" and `low` as "Beginner mode: avoid all avalanche terrain".
+`flagged` is computed server-side, and the UI never works it out itself. The UI sends the setting with every `POST /analyze` and `POST /alternative` call.
 
-Overhead exposure: a gray point is flagged if uphill cells within 300 m are 30 degrees or steeper and rated Considerable or higher, or unrated.
+Settings exposes `moderate` as "Also avoid Moderate" and `low` as "Beginner mode: stay off and out from under slopes 30° and steeper", with the subtitle "Checks slopes on your route and within 300 m uphill."
+
+Overhead exposure: a gray point is flagged if uphill cells within 300 m are 30 degrees or steeper and rated at or above `avoid_at_or_above`, or unrated. More "no clean line" results at `low` are expected, and the fallback options handle them.
 
 What the route shows depends on these totals:
 
 | Route | Banner | Button |
 | --- | --- | --- |
 | `flagged_stretch_count` above 0 | Flagged stretches | Primary filled "Reroute" |
-| Nothing flagged, `steep_segment_count` above 0 | "N stretches in avalanche terrain, rated Low today (X m). Not rerouted by default." The rating names what's in `steep_ratings`: "Low", "Moderate" or "Low to Moderate" | Secondary outline "Avoid these too", which sets `avoid_at_or_above` to the lowest rating present (`steep_ratings[0]`) and reruns the reroute |
+| Nothing flagged, `steep_segment_count` above 0 | "N stretches in avalanche terrain, rated Low today (X m). Not rerouted by default." The rating names what's in `steep_ratings`: "Low", "Moderate" or "Low to Moderate" | Secondary outline "Avoid these too", which reruns the analysis and reroute at the lowest rating present (`steep_ratings[0]`) |
 | Both 0 | Gray "No flags found on this route today." | None |
 
-The primary Reroute button only appears for actual flags.
+The primary Reroute button shows if and only if `flagged_stretch_count` is above 0.
+
+"Avoid these too" applies to the current route only and never changes the saved setting. After that reroute, the comparison card shows a text link, "Make this my default", which updates the saved setting only when tapped.
 
 If `ratings_issued` is false (all 24 rose values are 0), show the banner "No danger ratings issued today. Steep terrain is shown as unrated."
 

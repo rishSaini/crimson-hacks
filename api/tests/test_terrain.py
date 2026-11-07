@@ -5,6 +5,7 @@ import math
 import numpy as np
 import pytest
 
+from app.models import FLAGGED_DANGERS
 from app.terrain import (
     aspect_octant,
     candidate_bands,
@@ -17,6 +18,7 @@ from app.terrain import (
 CELL_SIZE_M = 10.0
 UPPER, MID, LOWER = 0, 1, 2
 N, NE, E, SE, S, SW, W, NW = range(8)
+DANGER_BY_LEVEL = ["no_rating", "low", "moderate", "considerable", "high", "extreme"]
 
 
 def plane_facing(direction: str) -> np.ndarray:
@@ -218,3 +220,11 @@ def test_reroute_avoids_ratings_at_or_above_the_threshold(value, threshold, lowe
 @pytest.mark.parametrize("threshold", ["considerable", "moderate", "low"])
 def test_reroute_always_avoids_unrated_terrain(threshold):
     assert is_reroute_target(0, threshold) is True
+
+
+@pytest.mark.parametrize("threshold", ["considerable", "moderate", "low"])
+@pytest.mark.parametrize("value", range(0, 11))
+def test_reroute_targets_agree_with_the_contract(value, threshold):
+    # /analyze responses are validated against FLAGGED_DANGERS, so scoring must match it.
+    danger = DANGER_BY_LEVEL[math.ceil(value / 2)]
+    assert is_reroute_target(value, threshold) == (danger in FLAGGED_DANGERS[threshold])

@@ -142,6 +142,13 @@ export interface components {
              * Format: date
              */
             date: string;
+            /**
+             * Avoid At Or Above
+             * @description Lowest rating to flag. Unrated 30 degree terrain is always flagged
+             * @default considerable
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
         };
         /** AnalyzeResponse */
         AnalyzeResponse: {
@@ -155,6 +162,11 @@ export interface components {
              * @enum {string}
              */
             source: "uac_live" | "demo_replay" | "fixture";
+            /**
+             * Avoid At Or Above
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
             segments: components["schemas"]["SegmentCollection"];
             totals: components["schemas"]["RouteTotals"];
         };
@@ -390,7 +402,7 @@ export interface components {
             color: "gray" | "unrated" | "green" | "yellow" | "orange" | "red" | "black";
             /**
              * Flagged
-             * @description Reroute target: 30 degrees or more that is rated Considerable or higher or unrated, or overhead exposure
+             * @description Reroute target under avoid_at_or_above: 30 degrees or more at or above that rating or unrated, or overhead exposure from such a slope
              */
             flagged: boolean;
             /** Flag Reason */
