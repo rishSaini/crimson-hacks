@@ -11,7 +11,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Forecast */
+        /**
+         * Get Forecast
+         * @description Replay a saved demo day, or the sample forecast. Live UAC data needs an API token.
+         */
         get: operations["get_forecast_forecast_get"];
         put?: never;
         post?: never;
@@ -312,6 +315,8 @@ export interface components {
             what?: string | null;
             /** Where */
             where?: string | null;
+            /** Impacts */
+            impacts?: string | null;
             /** What To Do */
             what_to_do?: string | null;
             /** Valid From */
@@ -356,6 +361,11 @@ export interface components {
              * @description UAC's words, verbatim
              */
             bottom_line: string;
+            /**
+             * Comparison Advice
+             * @description UAC's words, verbatim, for the comparison card on days that need them
+             */
+            comparison_advice?: string | null;
             /** Forecast Url */
             forecast_url: string;
         };

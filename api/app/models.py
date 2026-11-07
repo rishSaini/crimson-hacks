@@ -100,6 +100,7 @@ class ForecastAlert(ApiModel):
     level: AlertLevel
     what: str | None = None
     where: str | None = None
+    impacts: str | None = None
     what_to_do: str | None = None
     valid_from: datetime | None = None
     valid_to: datetime | None = None
@@ -111,7 +112,7 @@ class ForecastAlert(ApiModel):
         if self.level != "special_bulletin":
             details.append(self.what_to_do)
         if self.level == "none":
-            if any(detail is not None for detail in [*details, self.what_to_do]):
+            if any(detail is not None for detail in [*details, self.what_to_do, self.impacts]):
                 raise ValueError("level 'none' must not carry alert details")
         elif any(detail is None for detail in details):
             raise ValueError(f"level '{self.level}' needs all of its alert details")
@@ -134,6 +135,10 @@ class ForecastResponse(ApiModel):
     )
     problems: list[AvalancheProblem]
     bottom_line: str = Field(description="UAC's words, verbatim")
+    comparison_advice: str | None = Field(
+        default=None,
+        description="UAC's words, verbatim, for the comparison card on days that need them",
+    )
     forecast_url: str
 
     @model_validator(mode="after")

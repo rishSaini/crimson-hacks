@@ -325,7 +325,7 @@ def test_briefing_fixture_only_cites_segments_it_was_given():
 
 
 # Fields that hold UAC's words verbatim. Everything else is RedRun's own text.
-UAC_QUOTED_KEYS = {"bottom_line", "problems", "alert"}
+UAC_QUOTED_KEYS = {"bottom_line", "comparison_advice", "problems", "alert"}
 REPO_ROOT = FIXTURES_DIR.parent
 
 
