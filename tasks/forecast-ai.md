@@ -9,7 +9,8 @@ Owns the forecast, briefing and agent modules in `api/app/`, plus `fixtures/demo
 - [ ] Check what the feed returns before daily ratings start, and that it decodes to `ratings_issued: false`
 - [ ] If the token doesn't arrive in time, enter the demo day's values from the forecast page by hand. Avalanche.org can't replace it: it has one overall rating per zone, with no rose, problems or bottom line
 - [x] Pick the Warning example: Feb 18, 2026, with High on E-N-NW above 8,000 ft and an Avalanche Warning
-- [ ] Save the main demo day, Feb 21, 2026: compare a screenshot of its rose with the written summary in the archived forecast before saving
+- [x] Save the main demo day, Feb 21, 2026: its rose screenshot matches the written summary in the archived forecast
+- [x] Serve saved days from `GET /forecast`, and return 404 for dates with no forecast
 - [x] Save its real rose, bottom line, problems and alert to `fixtures/demo_days.json`, with `source: demo_replay`
 - [x] Confirm the `forecast_url` in `demo_days.json` opens the Feb 18 forecast in a browser
 - [ ] Start hand-tracing the 10 to 15 Cottonwood tours as GeoJSON, each with trailhead, objective, distance and climb (share with Terrain)
@@ -19,7 +20,7 @@ Owns the forecast, briefing and agent modules in `api/app/`, plus `fixtures/demo
 
 - [x] Rose decoding: `app/forecast.py`, from a list of 24 values. Adapt it once the real feed format is confirmed
 - [ ] Replace the `GET /forecast` stub: `httpx` with a 15-minute in-memory cache, and `demo_days.json` for past days. If the feed is down, say so rather than applying Avalanche.org's overall rating to every aspect
-- [ ] Fill `alert` from the feed, with UAC's text verbatim. The model has no field for a warning's "Impacts" text, so add one if the banner needs it
+- [ ] Fill `alert` from the feed, with UAC's text verbatim
 
 ## Hour 6 to 12: demo features
 
@@ -51,6 +52,7 @@ Reroute comes first (see `tasks/terrain.md`). Then:
 - [ ] Rehearse the 3-minute pitch at least 5 times with a timer
 - [ ] Verify the deaths cited in the hook against UAC's report and the February 2026 source
 - [ ] Prepare for the demo days' weight: Feb 18 and Feb 21, 2026 are both archived in relation to fatalities. Decide how to acknowledge that on stage
+- [ ] Explain in the demo script why Feb 21's bulletin says HIGH while its rose shows Considerable. Both are shown word for word
 - [ ] Say in the pitch that UAC recommended avoiding all avalanche terrain that day, and that RedRun shows where a route crosses it rather than clearing anyone to go
 
 ## Last 2 hours: freeze

@@ -10,7 +10,7 @@ Target user: a Salt Lake skier or splitboarder new to touring in Big Cottonwood,
 
 **The UI never calls a route, segment or slope "safe".** This covers RedRun's own UI copy, fixtures, LLM output and pitch material. The models and tests reject "safe", "safer", "safest" and "safely" in these.
 
-**The one exception is UAC's own text.** `bottom_line`, `problems` and `alert` hold it verbatim, including words like "safer". Never trim or reword it, and always show it in a block attributed to UAC with a link to the full forecast. LLM output still can't use the word, even when quoting UAC.
+**The one exception is UAC's own text.** `bottom_line`, `comparison_advice`, `problems` and `alert` hold it verbatim, including words like "safer". Never trim or reword it, and always show it in a block attributed to UAC with a link to the full forecast. LLM output still can't use the word, even when quoting UAC.
 
 - Under 30 degrees is "no avalanche-terrain flag", never "safe" or "clear".
 - A reroute "avoids terrain flagged by today's forecast", never "has no avalanche risk".
@@ -103,7 +103,7 @@ The primary Reroute button shows if and only if `flagged_stretch_count` is above
 
 ### Alerts
 
-`ForecastResponse.alert` has a `level` (`none`, `watch`, `warning` or `special_bulletin`) and `what`, `where`, `what_to_do`, `valid_from` and `valid_to`. Special bulletins have no "What to do" section, so `what_to_do` can be null there, and we never write one for UAC. Any level but `none` shows as a full-width banner above everything.
+`ForecastResponse.alert` has a `level` (`none`, `watch`, `warning` or `special_bulletin`) and `what`, `where`, `impacts`, `what_to_do`, `valid_from` and `valid_to`. Special bulletins have no "What to do" section, so `what_to_do` can be null there, and we never write one for UAC. Any level but `none` shows as a full-width banner above everything.
 
 On a forecast day with a `warning`:
 
@@ -111,6 +111,8 @@ On a forecast day with a `warning`:
 - The banner explains why everything steep is flagged.
 - The comparison card adds: "UAC recommends avoiding all avalanche terrain today."
 - Nothing may imply that a rerouted line makes going out okay.
+
+A forecast day can also set `comparison_advice`, UAC's own words quoted from its bottom line. The comparison card shows it, attributed to UAC, on any day that has it. Feb 21, 2026 uses this: it isn't a Warning, so nothing is forced, but UAC still says to stay off and out from under slopes steeper than 30 degrees.
 
 If `ratings_issued` is false (all 24 rose values are 0), show the banner "No danger ratings issued today. Steep terrain is shown as unrated."
 

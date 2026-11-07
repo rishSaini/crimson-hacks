@@ -9,8 +9,8 @@ Nothing is built yet. The API returns made-up fixture data.
 1. Follow the setup under "Run" in [CLAUDE.md](../CLAUDE.md). This Mac has no Node and only Python 3.9, so install Node 20.9+ and Python 3.11+ first.
 2. **Request a UAC API token at https://utahavalanchecenter.org/api-access.** The forecast JSON now requires one, which the design doc gets wrong, and nothing else provides the rose.
 3. Fetch the UAC Salt Lake JSON with the token, a real User-Agent and contact email, and confirm the rose decodes with `app/forecast.py`. Check what it returns before ratings start, since it should decode to `ratings_issued: false`.
-4. Done: Feb 18, 2026 is saved in `fixtures/demo_days.json`, and its `forecast_url` opens that forecast.
-5. Replace the `GET /forecast` stub, serving past days from `demo_days.json`.
+4. Done: Feb 21, 2026 (main demo day) and Feb 18, 2026 (Warning example) are saved in `fixtures/demo_days.json`.
+5. Done: `GET /forecast` serves saved days from `demo_days.json`. Connect the live feed once the token arrives.
 
 The forecast never blocks anyone: Karthik and Ali can use the fixtures until yours is live.
 
@@ -26,7 +26,11 @@ The forecast never blocks anyone: Karthik and Ali can use the fixtures until you
 8. **Worst rating in the window:** a point takes the worst rating among steep cells in its 3 by 3 window. Karthik reviews this on `terrain-review-rulings`.
 9. **Overhead direction:** a cell counts only if it's higher than the point and faces it, within 60 degrees. The distance limit stays 300 m.
 10. **Short runs:** all flagged runs stay in the data, and runs under 50 m apart merge for the banner and pins. The 30 m drop rule is gone.
-11. **Main demo day:** Feb 21, 2026, with a Special Bulletin and no forced threshold. Feb 18 stays as the Warning example. Feb 21 isn't saved yet: its rose still has to be checked against the written summary.
+11. **Main demo day:** Feb 21, 2026, with a Special Bulletin and no forced threshold. Feb 18 stays as the Warning example. Feb 21's rose was checked against its written summary and saved.
+12. **Bulletin times:** Feb 21's bulletin runs from Feb 20 to Feb 23, 2026 at 6:00 AM MST, using its dated "Warning Times" over "today".
+13. **"Impacts" text:** saved word for word with every alert.
+14. **HIGH vs Considerable:** Feb 21's bulletin says HIGH and its rose shows Considerable. Both stay word for word, and the demo script explains the difference.
+15. **Feb 21's comparison card:** adds UAC's "staying off of — and out from under" line, through `comparison_advice`.
 
 ## What others need from you
 
