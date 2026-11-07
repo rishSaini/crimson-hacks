@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app.main import FIXTURES_DIR, app
+from app.route_analysis import merge_runs
 from app.models import (
     AlternativeRequest,
     AlternativeResponse,
@@ -298,7 +299,19 @@ def test_analyze_fixture_totals_match_segments(name):
     assert all(segment["slope_max_deg"] >= 30 for segment in steep)
     assert totals["length_m"] == sum(segment["length_m"] for segment in segments)
     assert totals["flagged_length_m"] == sum(segment["length_m"] for segment in flagged)
-    assert totals["flagged_stretch_count"] == len(flagged)
+    merged = merge_runs(
+        [SegmentProperties.model_validate(segment) for segment in segments], lambda s: s.flagged
+    )
+    assert totals["flagged_stretch_count"] == len(merged)
+    assert [stretch["segment_ids"] for stretch in body["flagged_stretches"]] == [
+        [segment.id for segment in group] for group in merged
+    ]
+    assert totals["steep_stretch_count"] == len(
+        merge_runs(
+            [SegmentProperties.model_validate(segment) for segment in segments],
+            lambda s: s.color != "gray",
+        )
+    )
     assert [segment["id"] for segment in segments] == list(range(1, len(segments) + 1))
 
 

@@ -1,5 +1,6 @@
 """Sample routes against the prepared terrain grids and a supplied forecast."""
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from functools import lru_cache
 from itertools import groupby
@@ -15,6 +16,7 @@ from app.forecast import effective_avoid_at_or_above
 from app.models import (
     AnalyzeRequest,
     AnalyzeResponse,
+    FlaggedStretch,
     ForecastResponse,
     LineString,
     RouteTotals,
@@ -28,6 +30,7 @@ GRID_DIR = Path(__file__).resolve().parents[2] / "data" / "grids"
 METERS_TO_FEET = 1 / 0.3048
 SAMPLE_SPACING_M = 15
 OVERHEAD_FACING_DEG = 60
+STRETCH_GAP_M = 50
 DANGERS = ("no_rating", "low", "moderate", "considerable", "high", "extreme")
 COLORS = ("unrated", "green", "yellow", "orange", "red", "black")
 ASPECTS = ("N", "NE", "E", "SE", "S", "SW", "W", "NW")
@@ -158,6 +161,40 @@ def load_grids() -> TerrainGrids:
     return TerrainGrids(grid[0], *arrays)
 
 
+def merge_runs(
+    segments: list[SegmentProperties], in_run: Callable[[SegmentProperties], bool]
+) -> list[list[SegmentProperties]]:
+    """Group matching segments, joining runs under STRETCH_GAP_M apart along the route."""
+    groups: list[list[SegmentProperties]] = []
+    gap_m = 0.0
+    for segment in segments:
+        if not in_run(segment):
+            gap_m += segment.length_m
+            continue
+        if groups and gap_m < STRETCH_GAP_M:
+            groups[-1].append(segment)
+        else:
+            groups.append([segment])
+        gap_m = 0.0
+    return groups
+
+
+def flagged_stretches_of(features: list[SegmentFeature]) -> list[FlaggedStretch]:
+    """Merge flagged runs for the banner and pins. The runs themselves all stay in the data."""
+    pins = {feature.properties.id: feature.geometry.coordinates[0] for feature in features}
+    groups = merge_runs([feature.properties for feature in features], lambda s: s.flagged)
+    return [
+        FlaggedStretch(
+            id=index,
+            segment_ids=[segment.id for segment in group],
+            flagged_length_m=sum(segment.length_m for segment in group),
+            max_danger=max((segment.danger for segment in group), key=DANGERS.index),
+            pin=pins[group[0].id],
+        )
+        for index, group in enumerate(groups, start=1)
+    ]
+
+
 def analyze_route(
     request: AnalyzeRequest, forecast: ForecastResponse, grids: TerrainGrids
 ) -> AnalyzeResponse:
@@ -232,14 +269,16 @@ def analyze_route(
     segments = [feature.properties for feature in features]
     steep = [segment for segment in segments if segment.color != "gray"]
     flagged_segments = [segment for segment in segments if segment.flagged]
+    flagged_stretches = flagged_stretches_of(features)
     totals = RouteTotals(
         length_m=sum(segment.length_m for segment in segments),
         climb_ft=climb_ft,
         steep_segment_count=len(steep),
         steep_length_m=sum(segment.length_m for segment in steep),
+        steep_stretch_count=len(merge_runs(segments, lambda segment: segment.color != "gray")),
         steep_ratings=sorted({segment.danger for segment in steep}, key=DANGERS.index),
         flagged_length_m=sum(segment.length_m for segment in flagged_segments),
-        flagged_stretch_count=len(flagged_segments),
+        flagged_stretch_count=len(flagged_stretches),
         max_flagged_danger=max(
             (segment.danger for segment in flagged_segments), key=DANGERS.index, default=None
         ),
@@ -250,5 +289,6 @@ def analyze_route(
         avoid_at_or_above=threshold,
         forced_by_warning=forced_by_warning,
         segments=SegmentCollection(features=features),
+        flagged_stretches=flagged_stretches,
         totals=totals,
     )

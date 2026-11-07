@@ -197,6 +197,8 @@ export interface components {
              */
             forced_by_warning: boolean;
             segments: components["schemas"]["SegmentCollection"];
+            /** Flagged Stretches */
+            flagged_stretches: components["schemas"]["FlaggedStretch"][];
             totals: components["schemas"]["RouteTotals"];
         };
         /** AvalancheProblem */
@@ -261,6 +263,40 @@ export interface components {
             attribution: string;
             /** Feature Count */
             feature_count: number;
+        };
+        /**
+         * FlaggedStretch
+         * @description One banner entry and numbered pin. Every flagged run stays in `segments`.
+         */
+        FlaggedStretch: {
+            /**
+             * Id
+             * @description 1-based pin number along the route
+             */
+            id: number;
+            /**
+             * Segment Ids
+             * @description The flagged runs it merges
+             */
+            segment_ids: number[];
+            /**
+             * Flagged Length M
+             * @description Flagged meters, not counting gaps
+             */
+            flagged_length_m: number;
+            /**
+             * Max Danger
+             * @enum {string}
+             */
+            max_danger: "no_rating" | "low" | "moderate" | "considerable" | "high" | "extreme";
+            /**
+             * Pin
+             * @description Where the first flagged run starts
+             */
+            pin: [
+                number,
+                number
+            ];
         };
         /**
          * ForecastAlert
@@ -409,13 +445,21 @@ export interface components {
             /** Steep Length M */
             steep_length_m: number;
             /**
+             * Steep Stretch Count
+             * @description Those segments, merged when under 50 m apart, for the banner
+             */
+            steep_stretch_count: number;
+            /**
              * Steep Ratings
              * @description Ratings on those segments, lowest first, with no_rating before low
              */
             steep_ratings: ("no_rating" | "low" | "moderate" | "considerable" | "high" | "extreme")[];
             /** Flagged Length M */
             flagged_length_m: number;
-            /** Flagged Stretch Count */
+            /**
+             * Flagged Stretch Count
+             * @description Flagged runs merged when under 50 m apart, for the banner and pins
+             */
             flagged_stretch_count: number;
             /**
              * Max Flagged Danger

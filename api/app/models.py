@@ -209,14 +209,29 @@ class RouteTotals(ApiModel):
         ge=0, description="Segments of 30 degrees or more at any rating: all are listed"
     )
     steep_length_m: float = Field(ge=0)
+    steep_stretch_count: int = Field(
+        ge=0, description="Those segments, merged when under 50 m apart, for the banner"
+    )
     steep_ratings: list[DangerLevel] = Field(
         description="Ratings on those segments, lowest first, with no_rating before low"
     )
     flagged_length_m: float = Field(ge=0)
-    flagged_stretch_count: int = Field(ge=0)
+    flagged_stretch_count: int = Field(
+        ge=0, description="Flagged runs merged when under 50 m apart, for the banner and pins"
+    )
     max_flagged_danger: DangerLevel | None = Field(
         default=None, description="no_rating only if every flagged stretch is unrated"
     )
+
+
+class FlaggedStretch(ApiModel):
+    """One banner entry and numbered pin. Every flagged run stays in `segments`."""
+
+    id: int = Field(description="1-based pin number along the route")
+    segment_ids: list[int] = Field(min_length=1, description="The flagged runs it merges")
+    flagged_length_m: float = Field(ge=0, description="Flagged meters, not counting gaps")
+    max_danger: DangerLevel
+    pin: Position = Field(description="Where the first flagged run starts")
 
 
 class AnalyzeResponse(ApiModel):
@@ -227,12 +242,15 @@ class AnalyzeResponse(ApiModel):
         description="An Avalanche Warning forced low for this forecast day"
     )
     segments: SegmentCollection
+    flagged_stretches: list[FlaggedStretch]
     totals: RouteTotals
 
     @model_validator(mode="after")
     def flags_match_setting(self) -> "AnalyzeResponse":
         if self.forced_by_warning and self.avoid_at_or_above != "low":
             raise ValueError("a Warning forces avoid_at_or_above to low")
+        if self.totals.flagged_stretch_count != len(self.flagged_stretches):
+            raise ValueError("flagged_stretch_count must match flagged_stretches")
         flagged_dangers = FLAGGED_DANGERS[self.avoid_at_or_above]
         for feature in self.segments.features:
             segment = feature.properties

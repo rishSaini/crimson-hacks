@@ -174,7 +174,9 @@
     ],
     "flagged_length_m": 0,
     "flagged_stretch_count": 0,
-    "max_flagged_danger": null
+    "max_flagged_danger": null,
+    "steep_stretch_count": 2
   },
-  "forced_by_warning": false
+  "forced_by_warning": false,
+  "flagged_stretches": []
 }

@@ -4,7 +4,15 @@ import numpy as np
 import pytest
 from affine import Affine
 
-from app.route_analysis import TerrainGrids
+from app.main import FIXTURES_DIR
+from app.models import (
+    AnalyzeRequest,
+    ForecastResponse,
+    LineString,
+    SegmentFeature,
+    SegmentProperties,
+)
+from app.route_analysis import TO_UTM, TerrainGrids, analyze_route, flagged_stretches_of
 
 # The sample point falls in the center of cell (100, 100), which is 2,700 m high.
 POINT = (431005, 4498995)
@@ -166,3 +174,114 @@ def test_missing_aspect_on_a_higher_steep_slope_stops_the_analysis():
     grids = overhead_cell(aspect=np.nan)
     with pytest.raises(ValueError):
         grids.sample(*POINT, [HIGH] * 24, "considerable")
+
+
+def run(segment_id: int, length_m: float, flagged: bool, danger: str = "considerable"):
+    """A straight segment heading east, flagged as steep or left gray."""
+    start = -111.6 + segment_id / 1000
+    return SegmentFeature(
+        geometry=LineString(coordinates=[(start, 40.6), (start + 0.001, 40.6)]),
+        properties=SegmentProperties(
+            id=segment_id, length_m=length_m, slope_min_deg=10, slope_max_deg=40,
+            elevation_min_ft=9000, elevation_max_ft=9100, aspects=["N"],
+            danger=danger if flagged else "low",
+            color={"considerable": "orange", "high": "red"}[danger] if flagged else "gray",
+            flagged=flagged, flag_reason="steep_terrain" if flagged else None,
+        ),
+    )
+
+
+def stretch_ids(*features):
+    return [stretch.segment_ids for stretch in flagged_stretches_of(list(features))]
+
+
+@pytest.mark.parametrize(
+    "gap_m, expected",
+    [
+        (0.1, [[1, 3]]),
+        (49.9, [[1, 3]]),
+        (50.0, [[1], [3]]),  # "less than 50 m" apart, so exactly 50 m stays separate
+        (120.0, [[1], [3]]),
+    ],
+)
+def test_flagged_runs_merge_only_under_50_m_apart(gap_m, expected):
+    assert stretch_ids(run(1, 100, True), run(2, gap_m, False), run(3, 100, True)) == expected
+
+
+def test_adjacent_flagged_runs_merge():
+    assert stretch_ids(run(1, 100, True), run(2, 100, True, "high")) == [[1, 2]]
+
+
+def test_gap_adds_up_across_unflagged_segments():
+    # 30 m and 30 m of gray make a 60 m gap, even though each is under 50 m.
+    assert stretch_ids(
+        run(1, 100, True), run(2, 30, False), run(3, 30, False), run(4, 100, True)
+    ) == [[1], [4]]
+
+
+def test_merging_chains_along_the_route():
+    assert stretch_ids(
+        run(1, 10, True), run(2, 40, False), run(3, 10, True), run(4, 40, False), run(5, 10, True)
+    ) == [[1, 3, 5]]
+
+
+def test_gaps_before_the_first_and_after_the_last_run_do_not_matter():
+    assert stretch_ids(run(1, 10, False), run(2, 10, True), run(3, 10, False)) == [[2]]
+
+
+def test_stretch_reports_flagged_meters_worst_danger_and_a_pin():
+    features = [run(1, 100, True), run(2, 40, False), run(3, 25, True, "high"), run(4, 500, False)]
+    stretch = flagged_stretches_of(features)[0]
+    assert stretch.id == 1
+    assert stretch.flagged_length_m == 125  # the 40 m gap isn't flagged terrain
+    assert stretch.max_danger == "high"
+    assert stretch.pin == features[0].geometry.coordinates[0]
+
+
+def test_no_flagged_runs_means_no_stretches():
+    assert flagged_stretches_of([run(1, 100, False)]) == []
+
+
+def short_steep_patch(cols):
+    """A route west to east along row 100, with steep High-rated cells at these columns."""
+    grids = flat_grids()
+    for col in cols:
+        grids.slope[100, col] = 35
+    forecast = ForecastResponse.model_validate_json(
+        (FIXTURES_DIR / "forecast.response.json").read_text()
+    )
+    for cell in forecast.rose:
+        cell.value, cell.danger, cell.pockets = HIGH, "high", False
+    points = [
+        TO_UTM.transform(430000 + (col + 0.5) * 10, 4500000 - 100.5 * 10, direction="INVERSE")
+        for col in (60, 140)
+    ]
+    request = AnalyzeRequest(route=LineString(coordinates=points), date=forecast.date)
+    return analyze_route(request, forecast, grids)
+
+
+def test_short_flagged_run_is_kept_in_the_data():
+    result = short_steep_patch([100])
+    runs = [f.properties for f in result.segments.features if f.properties.flagged]
+    assert len(runs) == 1
+    assert runs[0].length_m < 60
+    assert result.totals.flagged_stretch_count == 1
+
+
+def test_runs_close_together_merge_but_every_run_stays_in_segments():
+    result = short_steep_patch([90, 96])  # 60 m apart, less the 3 by 3 window on each side
+    runs = [f.properties.id for f in result.segments.features if f.properties.flagged]
+    assert len(runs) == 2
+    assert [stretch.segment_ids for stretch in result.flagged_stretches] == [runs]
+    assert result.totals.flagged_stretch_count == 1
+    assert result.totals.steep_segment_count == 2
+    assert result.totals.steep_stretch_count == 1
+    assert result.totals.flagged_length_m == pytest.approx(
+        sum(f.properties.length_m for f in result.segments.features if f.properties.flagged)
+    )
+
+
+def test_runs_far_apart_stay_separate():
+    result = short_steep_patch([70, 130])
+    assert result.totals.flagged_stretch_count == 2
+    assert [stretch.id for stretch in result.flagged_stretches] == [1, 2]
