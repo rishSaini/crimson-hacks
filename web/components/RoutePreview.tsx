@@ -40,6 +40,8 @@ const MAP_STYLE: StyleSpecification = {
       type: "raster-dem",
       url: "https://tiles.mapterhorn.com/tilejson.json",
       encoding: "terrarium",
+      maxzoom: 16,
+      tileSize: 512,
       attribution: "© Mapterhorn",
     },
     imagery: {
