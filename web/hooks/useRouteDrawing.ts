@@ -29,6 +29,7 @@ type Action =
   | { type: "reanalyze" }
   | { type: "resolved"; key: number; analysis: Fetched<AnalyzeResponse> }
   | { type: "failed"; key: number; error: string }
+  | { type: "adopt"; points: LngLat[]; analysis: AnalyzeResponse }
   | { type: "clear" };
 
 const initialState: State = {
@@ -61,6 +62,15 @@ function reducer(state: State, action: Action): State {
     case "failed":
       if (action.key !== state.requestKey) return state;
       return { ...state, phase: "error", error: action.error };
+    case "adopt":
+      // "Use this route": the reroute, already analyzed, becomes the route.
+      return {
+        points: action.points,
+        phase: "analyzed",
+        analysis: { data: action.analysis, offline: false },
+        error: null,
+        requestKey: state.requestKey + 1,
+      };
     case "clear":
       return { ...initialState, requestKey: state.requestKey + 1 };
   }
@@ -143,6 +153,10 @@ export function useRouteDrawing({ enabled, avoidAtOrAbove, date }: Options) {
     /** Re-run /analyze on the same line, e.g. after the avoid setting changes, or to retry. */
     reanalyze: useCallback(() => dispatch({ type: "reanalyze" }), []),
     clear: useCallback(() => dispatch({ type: "clear" }), []),
+    adopt: useCallback(
+      (points: LngLat[], analysis: AnalyzeResponse) => dispatch({ type: "adopt", points, analysis }),
+      [],
+    ),
   };
 }
 

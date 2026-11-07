@@ -33,7 +33,7 @@ export function DrawControls({ phase, pointCount, onUndo, onClear, onFinish, onR
           onClick={onUndo}
           disabled={!drawing || pointCount === 0}
         >
-          Undo
+          Undo point
         </button>
         <button type="button" className={BUTTON} onClick={onClear} disabled={pointCount === 0}>
           Clear
