@@ -23,3 +23,7 @@ The stubs don't return these other states, so import them directly when building
 Real replayed forecast days go in `demo_days.json`, with `"source": "demo_replay"`. Copy those values from a published UAC forecast, and never write them by hand from memory.
 
 `api/tests/test_contract.py` checks these files against the models.
+
+`SuggestionsRequest` and `SuggestionsResponse` examples are in `suggestions.request.json` and `suggestions.response.json`.
+They use the real local catalog and terrain grids with the forecast fixture.
+The current demo drawing returns `no_match`. See `data/routes/README.md` for the coverage limits.

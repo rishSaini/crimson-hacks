@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Suggestions */
+        post: operations["suggestions_suggestions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/alternative": {
         parameters: {
             query?: never;
@@ -209,6 +226,23 @@ export interface components {
             source: "uac_live" | "demo_replay" | "fixture";
             /** Items */
             items: components["schemas"]["BriefingItem"][];
+        };
+        /** CatalogInfo */
+        CatalogInfo: {
+            /** Source */
+            source: string;
+            /** Source Url */
+            source_url: string;
+            /** Retrieved At */
+            retrieved_at: string;
+            /** License */
+            license: string;
+            /** License Url */
+            license_url: string;
+            /** Attribution */
+            attribution: string;
+            /** Feature Count */
+            feature_count: number;
         };
         /** ForecastResponse */
         ForecastResponse: {
@@ -408,6 +442,108 @@ export interface components {
             /** Flag Reason */
             flag_reason?: ("steep_terrain" | "unrated_terrain" | "overhead_exposure") | null;
         };
+        /** SuggestedRoute */
+        SuggestedRoute: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string | null;
+            /**
+             * Difficulty
+             * @enum {string}
+             */
+            difficulty: "novice" | "easy" | "intermediate" | "advanced" | "expert" | "extreme";
+            /**
+             * Route Scope
+             * @constant
+             */
+            route_scope: "mapped_section";
+            /** Source Urls */
+            source_urls: string[];
+            route: components["schemas"]["LineString"];
+            analysis: components["schemas"]["AnalyzeResponse"];
+            comparison: components["schemas"]["RouteComparison"];
+            /** Start Distance M */
+            start_distance_m: number;
+            /** End Distance M */
+            end_distance_m: number;
+        };
+        /** SuggestionsRequest */
+        SuggestionsRequest: {
+            route: components["schemas"]["LineString"];
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Avoid At Or Above
+             * @description Lowest rating to flag. Unrated 30 degree terrain is always flagged
+             * @default considerable
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
+            /**
+             * Max Difficulty
+             * @description Highest OSM piste grade the user accepts
+             * @enum {string}
+             */
+            max_difficulty: "novice" | "easy" | "intermediate" | "advanced" | "expert" | "extreme";
+            /** Max Distance M */
+            max_distance_m: number;
+            /** Max Climb Ft */
+            max_climb_ft: number;
+            /**
+             * Corridor Width M
+             * @default 400
+             */
+            corridor_width_m: number;
+            /**
+             * Endpoint Tolerance M
+             * @default 200
+             */
+            endpoint_tolerance_m: number;
+            /**
+             * Limit
+             * @default 3
+             */
+            limit: number;
+        };
+        /** SuggestionsResponse */
+        SuggestionsResponse: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "uac_live" | "demo_replay" | "fixture";
+            /**
+             * Avoid At Or Above
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "found" | "no_match";
+            /** Message */
+            message: string;
+            catalog: components["schemas"]["CatalogInfo"];
+            original_analysis: components["schemas"]["AnalyzeResponse"];
+            /** Suggestions */
+            suggestions: components["schemas"]["SuggestedRoute"][];
+            /** Excluded */
+            excluded: {
+                [key: string]: number;
+            };
+            /** Limitations */
+            limitations: string[];
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -482,6 +618,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AnalyzeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    suggestions_suggestions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuggestionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestionsResponse"];
                 };
             };
             /** @description Validation Error */

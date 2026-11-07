@@ -21,7 +21,7 @@ from app.models import (
     SegmentFeature,
     SegmentProperties,
 )
-from app.terrain import aspect_octant, rose_value
+from app.terrain import aspect_octant, is_reroute_target, rose_value
 
 GRID_DIR = Path(__file__).resolve().parents[2] / "data" / "grids"
 METERS_TO_FEET = 1 / 0.3048
@@ -55,7 +55,47 @@ class TerrainGrids:
             raise TerrainCoverageError("The elevation grid has no data for part of the route.")
         return float(elevation * METERS_TO_FEET)
 
-    def sample(self, x: float, y: float, rose: list[int]) -> "TerrainSample":
+    def overhead_level(
+        self, x: float, y: float, rose: list[int], threshold: str
+    ) -> int | None:
+        """Check higher steep cells within 300 m, using the current forecast setting."""
+        row, col = self.cell_at(x, y)
+        radius = ceil(300 / self.transform.a) + 1
+        height, width = self.slope.shape
+        left, top = self.transform.c, self.transform.f
+        right = left + width * self.transform.a
+        bottom = top + height * self.transform.e
+        if x - 300 < left or x + 300 > right or y - 300 < bottom or y + 300 > top:
+            raise TerrainCoverageError("The overhead search extends beyond terrain coverage.")
+        r0, r1 = max(0, row - radius), min(self.slope.shape[0], row + radius + 1)
+        c0, c1 = max(0, col - radius), min(self.slope.shape[1], col + radius + 1)
+        rows, cols = np.mgrid[r0:r1, c0:c1]
+        cell_x = self.transform.c + (cols + 0.5) * self.transform.a
+        cell_y = self.transform.f + (rows + 0.5) * self.transform.e
+        within = (cell_x - x) ** 2 + (cell_y - y) ** 2 <= 300 ** 2
+        elevation = self.elevation[r0:r1, c0:c1]
+        slopes = self.slope[r0:r1, c0:c1]
+        higher = elevation > self.elevation[row, col]
+        # Missing terrain inside the search area prevents a complete exposure check.
+        if np.any(within & (~np.isfinite(elevation) | ~np.isfinite(slopes))):
+            raise TerrainCoverageError("Terrain coverage is incomplete within the overhead search area.")
+        rr, cc = np.where(within & higher & (slopes >= 30))
+        levels = []
+        for local_row, local_col in zip(rr, cc):
+            aspect = self.aspect[r0 + local_row, c0 + local_col]
+            if not np.isfinite(aspect):
+                raise TerrainCoverageError("The overhead search area has missing aspect data.")
+            value = rose_value(
+                rose, float(elevation[local_row, local_col] * METERS_TO_FEET),
+                aspect_octant(float(aspect)),
+            )
+            if is_reroute_target(value, threshold):
+                levels.append((value + 1) // 2)
+        return max(levels, default=None)
+
+    def sample(
+        self, x: float, y: float, rose: list[int], threshold: str = "considerable"
+    ) -> "TerrainSample":
         row, col = self.cell_at(x, y)
         elevation = self.elevation_at(row, col)
         window = np.s_[row - 1:row + 2, col - 1:col + 2]
@@ -72,7 +112,8 @@ class TerrainGrids:
             raise TerrainCoverageError("The aspect grid has no data for part of the route.")
         octant = aspect_octant(float(aspect))
         level = (rose_value(rose, elevation, octant) + 1) // 2 if slope >= 30 else None
-        return TerrainSample(slope, elevation, octant, level)
+        overhead = self.overhead_level(x, y, rose, threshold) if level is None else None
+        return TerrainSample(slope, elevation, octant, level, overhead)
 
 
 @dataclass(frozen=True)
@@ -81,6 +122,7 @@ class TerrainSample:
     elevation: float
     octant: int
     level: int | None
+    overhead_level: int | None = None
 
 
 @lru_cache(maxsize=1)
@@ -128,19 +170,26 @@ def analyze_route(
     lengths = np.linalg.norm(np.diff(projected, axis=0), axis=1)
     rose = [cell.value for cell in forecast.rose]
     samples = [
-        grids.sample(*midpoint, rose)
+        grids.sample(*midpoint, rose, request.avoid_at_or_above)
         for midpoint in (projected[:-1] + projected[1:]) / 2
     ]
 
     features = []
     first = 0
-    for level, group in groupby(samples, key=lambda sample: sample.level):
+    threshold_level = {"considerable": 3, "moderate": 2, "low": 1}[request.avoid_at_or_above]
+    for (level, overhead), group in groupby(
+        samples, key=lambda sample: (sample.level, sample.overhead_level)
+    ):
         segment = list(group)
         end = first + len(segment)
-        flagged = level == 0 or (level is not None and level >= 3)
+        flagged = overhead is not None or level == 0 or (
+            level is not None and level >= threshold_level
+        )
         reason = None
         if flagged:
             reason = "unrated_terrain" if level == 0 else "steep_terrain"
+        if overhead is not None:
+            reason = "overhead_exposure"
         properties = SegmentProperties(
             id=len(features) + 1,
             length_m=float(lengths[first:end].sum()),
@@ -149,7 +198,7 @@ def analyze_route(
             elevation_min_ft=min(sample.elevation for sample in segment),
             elevation_max_ft=max(sample.elevation for sample in segment),
             aspects=[ASPECTS[index] for index in sorted({s.octant for s in segment})],
-            danger=DANGERS[level] if level is not None else "no_rating",
+            danger=DANGERS[level if level is not None else overhead or 0],
             color=COLORS[level] if level is not None else "gray",
             flagged=flagged,
             flag_reason=reason,
@@ -178,6 +227,7 @@ def analyze_route(
     return AnalyzeResponse(
         date=forecast.date,
         source=forecast.source,
+        avoid_at_or_above=request.avoid_at_or_above,
         segments=SegmentCollection(features=features),
         totals=totals,
     )
