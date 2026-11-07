@@ -39,5 +39,17 @@ Read "Core logic" in `CLAUDE.md` first. Some of its rules are stricter than the 
 ## Rulings from Rishabh
 
 - **Overhead exposure follows `avoid_at_or_above`,** and unrated always counts. More "no clean line" results in `low` mode are expected, and the fallback options handle them, so don't loosen anything to avoid them.
-- **`POST /analyze` takes `avoid_at_or_above`** (same enum, default `considerable`), and `flagged` is computed server-side from that setting. The models, fixtures and tests already reflect this, but the stub ignores the setting. Your real `/analyze` has to apply it and echo it back. The response model rejects flags that don't match the setting.
-- **An Avalanche Warning forces `low` for that forecast day.** Run the setting through `effective_avoid_at_or_above` in `app/forecast.py`, in both `/analyze` and `/alternative`, and return `forced_by_warning`. Ali's UI never works this out.
+- **`POST /analyze` takes `avoid_at_or_above`** (same enum, default `considerable`), and `flagged` is computed server-side from that setting. Your `/analyze` applies it and echoes it back, and the response model rejects flags that don't match the setting.
+- **An Avalanche Warning forces `low` for that forecast day.** `/analyze` and `/suggestions` now do this through `effective_avoid_at_or_above` in `app/forecast.py`. `/alternative` still needs it when you build the reroute. Ali's UI never works this out.
+
+## Follow-ups from the review of your first terrain pass
+
+These are from merging `karthik/nearby-route-suggestions`, and Rishabh has the rulings on the first three.
+
+- **Ridgeline under-rating:** `sample` rates only the aspect of the steepest cell in the 3 by 3 window. A point on a 31 degree High-rated north face next to a 33 degree Moderate-rated south face comes out Moderate and unflagged. On Feb 18's rose, about 6% of steep points rate below their worst steep neighbor, and about 3% would lose a flag at the default setting.
+- **Short runs:** flagged runs under 30 m are kept. The demo route splits into 27 segments and 18 flagged stretches, 10 of them under 30 m, so the banner count is noisy.
+- **Overhead reach:** any higher steep cell within 300 m counts, in any direction. That flags 1,916 m of the 2,227 m demo route by default, and all of it on Feb 18, so a reroute may have little room.
+- **Startup:** `load_grids` runs on the first request, not at server start. Load it at startup so the first request on stage isn't the slow one.
+- **Gray segments:** unflagged gray segments return `danger: no_rating`, which reads like unrated terrain. Return the forecast's rating there, or make sure the UI never shows it.
+- **Spot check:** still compare 3 known slopes against a published slope-angle map.
+
