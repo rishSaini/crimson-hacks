@@ -76,3 +76,93 @@ def test_missing_aspect_on_a_steep_neighbor_stops_the_analysis():
     steep_cell(grids, 101, 100, 31, np.nan)
     with pytest.raises(ValueError):
         grids.sample(*POINT, rose(), "considerable")
+
+
+def overhead_cell(row=95, col=100, aspect=SOUTH_FACE, rise=20.0, slope=35.0) -> TerrainGrids:
+    """One steep cell near the sample point. Row 95 is 50 m due north of it, and uphill."""
+    grids = flat_grids()
+    grids.elevation[row, col] += rise
+    steep_cell(grids, row, col, slope, aspect)
+    return grids
+
+
+def overhead_flag(grids: TerrainGrids, value: int = HIGH, threshold: str = "considerable") -> bool:
+    sample = grids.sample(*POINT, [value] * 24, threshold)
+    assert sample.level is None
+    return sample.overhead_level is not None
+
+
+def test_slope_above_the_route_and_facing_it_flags():
+    assert overhead_flag(overhead_cell(aspect=SOUTH_FACE))
+
+
+def test_slope_below_the_route_does_not_flag():
+    assert not overhead_flag(overhead_cell(aspect=SOUTH_FACE, rise=-20.0))
+
+
+def test_slope_at_the_same_height_as_the_route_does_not_flag():
+    assert not overhead_flag(overhead_cell(aspect=SOUTH_FACE, rise=0.0))
+
+
+def test_slope_above_the_route_but_facing_away_does_not_flag():
+    assert not overhead_flag(overhead_cell(aspect=NORTH_FACE))
+
+
+@pytest.mark.parametrize(
+    "aspect, flagged",
+    [(120, True), (119, False), (240, True), (241, False), (150, True), (210, True)],
+)
+def test_slope_must_face_within_60_degrees_of_the_route(aspect, flagged):
+    # The point is due south of the cell, so the bearing from the cell to it is 180 degrees.
+    assert overhead_flag(overhead_cell(aspect=aspect)) is flagged
+
+
+@pytest.mark.parametrize(
+    "row, col, aspect",
+    [
+        (100, 95, 90),  # cell to the west, faces east
+        (100, 105, 270),  # cell to the east, faces west
+        (105, 100, 0),  # cell to the south, faces north
+        (95, 95, 135),  # cell to the northwest, faces southeast
+    ],
+)
+def test_facing_works_from_every_direction(row, col, aspect):
+    assert overhead_flag(overhead_cell(row, col, aspect))
+    assert not overhead_flag(overhead_cell(row, col, (aspect + 180) % 360))
+
+
+def test_facing_wraps_around_north():
+    # The cell is due south of the point, so the bearing from it to the point is 0 degrees.
+    assert overhead_flag(overhead_cell(105, 100, 350))
+    assert overhead_flag(overhead_cell(105, 100, 50))
+    assert not overhead_flag(overhead_cell(105, 100, 70))
+
+
+@pytest.mark.parametrize("row, flagged", [(70, True), (69, False)])
+def test_distance_limit_stays_300_m(row, flagged):
+    # Row 70 is exactly 300 m from the point, and row 69 is 310 m.
+    assert overhead_flag(overhead_cell(row=row)) is flagged
+
+
+def test_slope_under_30_degrees_does_not_flag():
+    assert not overhead_flag(overhead_cell(slope=29.0))
+
+
+@pytest.mark.parametrize(
+    "value, threshold, flagged",
+    [
+        (MODERATE, "considerable", False),
+        (MODERATE, "moderate", True),
+        (2, "moderate", False),
+        (2, "low", True),
+        (UNRATED, "considerable", True),
+    ],
+)
+def test_facing_slope_still_follows_the_setting(value, threshold, flagged):
+    assert overhead_flag(overhead_cell(), value, threshold) is flagged
+
+
+def test_missing_aspect_on_a_higher_steep_slope_stops_the_analysis():
+    grids = overhead_cell(aspect=np.nan)
+    with pytest.raises(ValueError):
+        grids.sample(*POINT, [HIGH] * 24, "considerable")

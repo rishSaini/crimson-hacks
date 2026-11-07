@@ -27,6 +27,7 @@ from app.terrain import aspect_octant, is_reroute_target, rose_value, worst_rati
 GRID_DIR = Path(__file__).resolve().parents[2] / "data" / "grids"
 METERS_TO_FEET = 1 / 0.3048
 SAMPLE_SPACING_M = 15
+OVERHEAD_FACING_DEG = 60
 DANGERS = ("no_rating", "low", "moderate", "considerable", "high", "extreme")
 COLORS = ("unrated", "green", "yellow", "orange", "red", "black")
 ASPECTS = ("N", "NE", "E", "SE", "S", "SW", "W", "NW")
@@ -59,7 +60,7 @@ class TerrainGrids:
     def overhead_level(
         self, x: float, y: float, rose: list[int], threshold: str
     ) -> int | None:
-        """Check higher steep cells within 300 m, using the current forecast setting."""
+        """Check higher steep cells within 300 m that face the point, at the current setting."""
         row, col = self.cell_at(x, y)
         radius = ceil(300 / self.transform.a) + 1
         height, width = self.slope.shape
@@ -80,12 +81,18 @@ class TerrainGrids:
         # Missing terrain inside the search area prevents a complete exposure check.
         if np.any(within & (~np.isfinite(elevation) | ~np.isfinite(slopes))):
             raise TerrainCoverageError("Terrain coverage is incomplete within the overhead search area.")
-        rr, cc = np.where(within & higher & (slopes >= 30))
+        candidates = within & higher & (slopes >= 30)
+        aspects = self.aspect[r0:r1, c0:c1]
+        if not np.isfinite(aspects[candidates]).all():
+            raise TerrainCoverageError("The overhead search area has missing aspect data.")
+        # A slope only threatens the point if it faces it: the bearing from the cell to the
+        # point has to be within 60 degrees of the way the cell faces.
+        bearing_to_point = np.degrees(np.arctan2(x - cell_x, y - cell_y))
+        facing = np.abs((bearing_to_point - aspects + 180) % 360 - 180) <= OVERHEAD_FACING_DEG
+        rr, cc = np.where(candidates & facing)
         levels = []
         for local_row, local_col in zip(rr, cc):
-            aspect = self.aspect[r0 + local_row, c0 + local_col]
-            if not np.isfinite(aspect):
-                raise TerrainCoverageError("The overhead search area has missing aspect data.")
+            aspect = aspects[local_row, local_col]
             value = rose_value(
                 rose, float(elevation[local_row, local_col] * METERS_TO_FEET),
                 aspect_octant(float(aspect)),
