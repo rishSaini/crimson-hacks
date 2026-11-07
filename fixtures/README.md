@@ -22,6 +22,8 @@ The stubs don't return these other states, so import them directly when building
 
 - `analyze.warning.response.json`, `alternative.warning.response.json`: an Avalanche Warning day, with `avoid_at_or_above` forced to `low` and `forced_by_warning: true`.
 
+- `plan.request.json`, `plan.response.json`, `plan.no_route.response.json`: real `POST /plan` results on the Feb 21 forecast. A plan is chosen from terrain alone, so it can come back flagged. `no_route` means slopes of 45 degrees or more block every way through.
+
 `demo_days.json` holds real replayed forecast days, keyed by date, with `"source": "demo_replay"`. **Unlike the other files, this is real UAC data.** Its `bottom_line`, `problems` and `alert` text is verbatim, including any typos, so don't edit it. Copy new days from a published UAC forecast, and never write them from memory.
 
 Both days were checked against UAC's rose and the written danger summary in the archived forecast. `2026-02-21` is the main demo day, with a Special Bulletin and no forced setting. `2026-02-18` is the Warning example. Both are archived in relation to fatalities, so treat them with care.

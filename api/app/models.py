@@ -330,6 +330,61 @@ class AlternativeResponse(ApiModel):
         return self
 
 
+# --- POST /plan --------------------------------------------------------------
+
+
+class PlanRequest(ApiModel):
+    start: Position
+    end: Position
+    date: Date
+    avoid_at_or_above: AvoidThreshold = Field(
+        default="considerable",
+        description="Lowest rating to flag. It changes the flags, never the line",
+    )
+
+    @model_validator(mode="after")
+    def points_differ(self) -> "PlanRequest":
+        if self.start == self.end:
+            raise ValueError("start and end must be different points")
+        return self
+
+
+class PlanResponse(ApiModel):
+    """A line chosen from terrain alone, with the forecast's flags on it from /analyze."""
+
+    date: Date
+    source: DataSource
+    avoid_at_or_above: AvoidThreshold = Field(description="The setting actually applied")
+    forced_by_warning: bool = Field(
+        description="An Avalanche Warning forced low for this forecast day"
+    )
+    status: Literal["found", "no_route"] = Field(
+        description="no_route means terrain alone blocks every way between the points"
+    )
+    message: str
+    route: LineString | None = None
+    analysis: AnalyzeResponse | None = Field(
+        default=None, description="The /analyze result for route, which can include flags"
+    )
+    limitations: list[str]
+    attribution: str
+
+    _no_safe_message = field_validator("message")(reject_safe_language)
+
+    @field_validator("limitations")
+    @classmethod
+    def no_safe_limitations(cls, items: list[str]) -> list[str]:
+        return [reject_safe_language(item) for item in items]
+
+    @model_validator(mode="after")
+    def status_matches_payload(self) -> "PlanResponse":
+        if self.forced_by_warning and self.avoid_at_or_above != "low":
+            raise ValueError("a Warning forces avoid_at_or_above to low")
+        if (self.status == "found") != (self.route is not None and self.analysis is not None):
+            raise ValueError("a route and its analysis come with status 'found', and only then")
+        return self
+
+
 # --- POST /briefing ----------------------------------------------------------
 
 

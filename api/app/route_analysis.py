@@ -199,6 +199,9 @@ def analyze_route(
     request: AnalyzeRequest, forecast: ForecastResponse, grids: TerrainGrids
 ) -> AnalyzeResponse:
     """Rate intervals of at most 15 m and retain every original route vertex."""
+    threshold, forced_by_warning = effective_avoid_at_or_above(
+        request.avoid_at_or_above, forecast.alert.level
+    )
     longitude, latitude = zip(*request.route.coordinates)
     x, y = TO_UTM.transform(longitude, latitude)
     vertices = np.column_stack((x, y))
@@ -223,9 +226,6 @@ def analyze_route(
     climb_ft = sum(max(0, end - start) for start, end in zip(elevations, elevations[1:]))
     lengths = np.linalg.norm(np.diff(projected, axis=0), axis=1)
     rose = [cell.value for cell in forecast.rose]
-    threshold, forced_by_warning = effective_avoid_at_or_above(
-        request.avoid_at_or_above, forecast.alert.level
-    )
     samples = [
         grids.sample(*midpoint, rose, threshold)
         for midpoint in (projected[:-1] + projected[1:]) / 2

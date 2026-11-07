@@ -35,7 +35,7 @@ Owns `data/` and the terrain modules in `api/app/`. Turn `api/tests/test_terrain
   - [ ] Fence a corridor: buffer the stretch by `corridor_width_m`, off-limits outside it
   - [ ] Cost grid, rated with `rose_value`: 1 per cell, near-blocking for 30 degrees or more at Considerable or higher or unrated and for overhead-exposed cells, heavy for steep Low or Moderate cells, small penalty per degree above 25
   - [ ] `avoid_at_or_above`: use `is_reroute_target` so steep cells at or above the threshold become near-blocking and their stretches become reroute targets, and the comparison counts them. Unrated is always a target
-  - [ ] Search with `skimage.graph.route_through_array` (`fully_connected=True`, `geometric=True`), then simplify at about 10 m
+  - [ ] Reuse `build_cost_grid(..., avoid=(rose, threshold))`, `least_cost_line` and `highest_clean_point` from `app/route_search.py`, with your corridor fenced off. They're tested but nothing calls them with `avoid` yet. Simplify at about 10 m, and fall back to the raw line if smoothing crosses a flag
   - [ ] Run the result back through analysis and only return it if flagged meters dropped
   - [ ] Comparison: added distance, added climb, Hausdorff deviation, flagged meters before and after
   - [ ] No clean line: say so, and return the fallbacks. Never loosen thresholds silently

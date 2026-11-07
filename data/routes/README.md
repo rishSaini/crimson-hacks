@@ -93,3 +93,18 @@ Data from OpenSkiData / OpenSkiMap.org, © OpenStreetMap contributors (ODbL), Sk
 
 The derived catalog uses ODbL-1.0. Preserve its attribution and comply with the database sharing requirements.
 [OpenSkiData licensing](https://www.openskidata.org/#license) · [ODbL-1.0](https://opendatacommons.org/licenses/odbl/1-0/)
+
+## Two-point selection and 3D preview
+
+`POST /endpoint-suggestions` accepts `start`, `destination`, `date`, and the same grade, distance, climb, and exposure limits.
+It matches the catalog's route endpoints within `endpoint_tolerance_m`.
+It checks the actual mapped geometry and reports each endpoint gap separately.
+It does not construct a path across either gap.
+Candidates sort by endpoint separation, route length, and climb.
+The endpoint request has no drawn route or corridor constraint.
+Examples are in `fixtures/endpoint-suggestions.request.json` and `fixtures/endpoint-suggestions.response.json`.
+
+Open `http://localhost:3000/preview` and choose two pins or load the match example.
+Select `View in 3D` to tilt the terrain and inspect the route.
+The display uses Mapterhorn elevation tiles. Terrain analysis continues to use the local USGS grids.
+The forecast source remains labeled in every result.

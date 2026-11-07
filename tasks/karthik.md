@@ -42,6 +42,10 @@ Read "Core logic" in `CLAUDE.md` first. Some of its rules are stricter than the 
 - **`POST /analyze` takes `avoid_at_or_above`** (same enum, default `considerable`), and `flagged` is computed server-side from that setting. Your `/analyze` applies it and echoes it back, and the response model rejects flags that don't match the setting.
 - **An Avalanche Warning forces `low` for that forecast day.** `/analyze` and `/suggestions` now do this through `effective_avoid_at_or_above` in `app/forecast.py`. `/alternative` still needs it when you build the reroute. Ali's UI never works this out.
 
+## Plan mode
+
+`POST /plan` finds a line from terrain alone and flags it, and avoiding danger is left to your reroute: see "Plan mode" in `CLAUDE.md`. The danger-avoiding search your reroute needs is already in `app/route_search.py` with tests. Please check the penalty values too, since they were picked without field testing.
+
 ## Follow-ups from the review of your first terrain pass
 
 These are from merging `karthik/nearby-route-suggestions`.

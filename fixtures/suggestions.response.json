@@ -14,6 +14,17 @@
     "attribution": "Data from OpenSkiData / OpenSkiMap.org, \u00a9 OpenStreetMap contributors (ODbL), Skimap.org, Who's On First, \u00a9 Mapterhorn",
     "feature_count": 20
   },
+  "excluded": {
+    "difficulty_limit": 11,
+    "difficulty_unknown": 2,
+    "endpoints_too_far": 7
+  },
+  "limitations": [
+    "Catalog features can represent only sections of a tour. Confirm the complete itinerary.",
+    "Difficulty comes from OpenStreetMap piste tags. Snow conditions can change the required skills.",
+    "Access, closures, obstacles, snow coverage, and route completeness require separate confirmation.",
+    "Exposure checks use a 10 m DEM and the selected forecast. They do not establish route feasibility."
+  ],
   "original_analysis": {
     "date": "2026-01-15",
     "source": "fixture",
@@ -1172,16 +1183,5 @@
       "max_flagged_danger": "considerable"
     }
   },
-  "suggestions": [],
-  "excluded": {
-    "difficulty_limit": 11,
-    "difficulty_unknown": 2,
-    "endpoints_too_far": 7
-  },
-  "limitations": [
-    "Catalog features can represent only sections of a tour. Confirm the complete itinerary.",
-    "Difficulty comes from OpenStreetMap piste tags. Snow conditions can change the required skills.",
-    "Access, closures, obstacles, snow coverage, and route completeness require separate confirmation.",
-    "Exposure checks use a 10 m DEM and the selected forecast. They do not establish route feasibility."
-  ]
+  "suggestions": []
 }
