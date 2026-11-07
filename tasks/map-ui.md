@@ -19,6 +19,9 @@ Owns `web/`. Works against the fixture stubs until the real endpoints land.
 - [ ] Forecast card: rating, bottom line, and the danger rose drawn as an SVG
 - [ ] Date picker to load a past day
 - [ ] Show `source` on the card, so fixture and replayed days can't pass for today's forecast
+- [ ] If `alert.level` isn't `none`, show a full-width banner above everything, with `what`, `where`, `what_to_do` and the valid times (`demo_days.json`)
+- [ ] If `forced_by_warning` is true, the banner explains why everything steep is flagged, for example: "All slopes 30° and steeper are flagged for this forecast day, whatever your setting." Show the setting as overridden, and never save the forced value
+- [ ] Show `bottom_line`, `problems` and `alert` text verbatim, in a block attributed to the Utah Avalanche Center with a link to `forecast_url`. Never trim or reword it
 - [ ] If `ratings_issued` is false, show the banner "No danger ratings issued today. Steep terrain is shown as unrated." (`forecast.no_ratings.response.json`)
 - [ ] Segment panel: list every 30 degree or steeper segment with its rating, Low and Moderate included: "Segment 3: 310 m on 34 to 38 degree NE slopes, 9,700 to 10,100 ft. Rated Considerable today."
 - [ ] Click a stretch to fly the camera to it
@@ -39,6 +42,7 @@ Owns `web/`. Works against the fixture stubs until the real endpoints land.
 - [ ] In that state, a secondary outline button "Avoid these too" that reruns the analysis and the reroute with `avoid_at_or_above` set to `steep_ratings[0]`, with no primary button. It shows on Low-only routes too. It applies to the current route only and never changes the saved setting
 - [ ] After an "Avoid these too" reroute, show a text link "Make this my default" on the comparison card. It updates the saved setting only when tapped
 - [ ] Rerouted state: original becomes a dashed gray ghost whatever its colors were, new line solid, comparison card, "Use this route" and "Undo"
+- [ ] On Warning days, the comparison card adds: "UAC recommends avoiding all avalanche terrain today." No copy may imply the rerouted line makes going out okay, and "Make this my default" doesn't show (`analyze.warning` and `alternative.warning` fixtures)
 - [ ] Corridor slider, 200 to 800 m
 - [ ] No-line state (`alternative.no_line.response.json`): one plain sentence and the three one-tap choices, plus the "Show lowest-exposure line anyway" link with its red label
 - [ ] Agent prompt box and streamed route cards; label generated lines "Computer-generated line, not a known skin track. Check it against a map."

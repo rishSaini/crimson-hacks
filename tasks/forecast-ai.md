@@ -4,24 +4,28 @@ Owns the forecast, briefing and agent modules in `api/app/`, plus `fixtures/demo
 
 ## Hour 0 to 1: de-risk (never blocks: the forecast can always be hard-coded)
 
-- [ ] Fetch `utahavalanchecenter.org/forecast/salt-lake/json` with a real User-Agent and contact email, and confirm the rose decodes
+- [ ] Request a UAC API token at `utahavalanchecenter.org/api-access`. The forecast JSON returned 401 without one on 2026-11-06, despite the design doc's "no key"
+- [ ] Fetch `utahavalanchecenter.org/forecast/salt-lake/json` with the token, a real User-Agent and a contact email, and confirm the rose's real format decodes
 - [ ] Check what the feed returns before daily ratings start, and that it decodes to `ratings_issued: false`
-- [ ] Pick the demo day: Considerable or High on north and east upper aspects. UAC's February 2026 cycle is a strong candidate
-- [ ] Save its real rose, bottom line and problems to `fixtures/demo_days.json`, with `source: demo_replay`
+- [ ] If the token doesn't arrive in time, enter the demo day's values from the forecast page by hand. Avalanche.org can't replace it: it has one overall rating per zone, with no rose, problems or bottom line
+- [x] Pick the demo day: Feb 18, 2026, with High on E-N-NW above 8,000 ft and an Avalanche Warning
+- [x] Save its real rose, bottom line, problems and alert to `fixtures/demo_days.json`, with `source: demo_replay`
+- [x] Confirm the `forecast_url` in `demo_days.json` opens the Feb 18 forecast in a browser
 - [ ] Start hand-tracing the 10 to 15 Cottonwood tours as GeoJSON, each with trailhead, objective, distance and climb (share with Terrain)
 - [ ] Check whether UAC observation data includes coordinates before promising a past-slides layer
 
 ## Hour 1 to 6: core loop
 
-- [ ] Rose decoding: level = ceil(value / 2), odd values are "pockets of", 0 is no rating, and `ratings_issued` is false if all 24 values are 0
-- [ ] Replace the `GET /forecast` stub: `httpx` with a 15-minute in-memory cache, Avalanche.org as backup, `demo_days.json` for past days
+- [x] Rose decoding: `app/forecast.py`, from a list of 24 values. Adapt it once the real feed format is confirmed
+- [ ] Replace the `GET /forecast` stub: `httpx` with a 15-minute in-memory cache, and `demo_days.json` for past days. If the feed is down, say so rather than applying Avalanche.org's overall rating to every aspect
+- [ ] Fill `alert` from the feed, with UAC's text verbatim. The model has no field for a warning's "Impacts" text, so add one if the banner needs it
 
 ## Hour 6 to 12: demo features
 
 - [ ] Replace the `POST /briefing` stub: Claude API (`claude-sonnet-5-5`) with structured JSON output
 - [ ] Pass only the forecast text and computed segments
 - [ ] Prompt: cite the segment and avalanche problem in each sentence, never say a route is safe, and describe unrated segments as unrated, not as low danger
-- [ ] Validate the JSON before returning it, and reject any note that calls terrain safe
+- [ ] Validate the JSON before returning it. `BriefingItem` rejects "safe" and its variants, even when quoting UAC, so catch that and fall back to a template sentence
 
 ## Hour 12 to 18: stretch, in this order
 
@@ -45,6 +49,8 @@ Reroute comes first (see `tasks/terrain.md`). Then:
 - [ ] Record a 90-second backup demo video
 - [ ] Rehearse the 3-minute pitch at least 5 times with a timer
 - [ ] Verify the deaths cited in the hook against UAC's report and the February 2026 source
+- [ ] Prepare for the demo day's weight: Feb 18, 2026 is archived in relation to a fatality that day. Decide how to acknowledge it on stage, or choose another day
+- [ ] Say in the pitch that UAC recommended avoiding all avalanche terrain that day, and that RedRun shows where a route crosses it rather than clearing anyone to go
 
 ## Last 2 hours: freeze
 

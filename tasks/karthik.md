@@ -40,3 +40,4 @@ Read "Core logic" in `CLAUDE.md` first. Some of its rules are stricter than the 
 
 - **Overhead exposure follows `avoid_at_or_above`,** and unrated always counts. More "no clean line" results in `low` mode are expected, and the fallback options handle them, so don't loosen anything to avoid them.
 - **`POST /analyze` takes `avoid_at_or_above`** (same enum, default `considerable`), and `flagged` is computed server-side from that setting. The models, fixtures and tests already reflect this, but the stub ignores the setting. Your real `/analyze` has to apply it and echo it back. The response model rejects flags that don't match the setting.
+- **An Avalanche Warning forces `low` for that forecast day.** Run the setting through `effective_avoid_at_or_above` in `app/forecast.py`, in both `/analyze` and `/alternative`, and return `forced_by_warning`. Ali's UI never works this out.
