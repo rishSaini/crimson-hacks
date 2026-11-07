@@ -1,11 +1,14 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import Map, { Layer, Marker, NavigationControl, ScaleControl, Source, type MapRef } from "react-map-gl/maplibre";
 import { setWorkerUrl, type StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { api, type EndpointSuggestionsResponse, type SuggestionsRequest, type SuggestionsResponse } from "@/lib/api";
 import { RouteRide } from "@/components/RouteRide";
+import { PreviewIcon } from "@/components/PreviewIcon";
+import styles from "./RoutePreview.module.css";
 
 setWorkerUrl(new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).toString());
 
@@ -70,8 +73,6 @@ const EXCLUSIONS: Record<string, string> = {
   climb_limit: "Above climb limit",
   forecast_exposure: "Flagged exposure",
 };
-const CONTROL = "rounded-md border border-slate-600 px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-45";
-const INPUT = "mt-1 w-full rounded-md border border-slate-600 bg-slate-900 px-2 py-2 text-sm";
 
 export function RoutePreview({ samples, demo, matchSketch }: {
   samples: PreviewSample[];
@@ -80,7 +81,8 @@ export function RoutePreview({ samples, demo, matchSketch }: {
 }) {
   const map = useRef<MapRef>(null);
   const mapSection = useRef<HTMLElement>(null);
-  const [sample, setSample] = useState(samples[0]);
+  const feedback = useRef<HTMLDivElement>(null);
+  const [sample, setSample] = useState(samples.find((item) => item.id === "skitour-8618") ?? samples[0]);
   const [sketch, setSketch] = useState<Position[]>([]);
   const [mode, setMode] = useState<"pins" | "sketch">("pins");
   const [drawing, setDrawing] = useState(false);
@@ -95,7 +97,21 @@ export function RoutePreview({ samples, demo, matchSketch }: {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  function frame(points: Position[]) {
+  useEffect(() => {
+    if (result || error) feedback.current?.scrollIntoView({ block: "start", behavior: "instant" });
+  }, [result, error]);
+
+  const [plannerCollapsed, setPlannerCollapsed] = useState(false);
+  const [rideActive, setRideActive] = useState(false);
+  const handleRideActive = useCallback((active: boolean) => {
+    setRideActive(active);
+    if (active) {
+      setPlannerCollapsed(true);
+      setDrawing(false);
+    }
+  }, []);
+
+  function frame(points: Position[], panelOpen = !plannerCollapsed) {
     if (!points.length) return;
     const [first, ...rest] = points;
     const bounds: [Position, Position] = [[...first], [...first]];
@@ -105,7 +121,12 @@ export function RoutePreview({ samples, demo, matchSketch }: {
       bounds[1][0] = Math.max(bounds[1][0], lng);
       bounds[1][1] = Math.max(bounds[1][1], lat);
     }
-    map.current?.fitBounds(bounds, { padding: 48, maxZoom: 15, duration: 350 });
+    const desktop = (mapSection.current?.clientWidth ?? 0) >= 900;
+    const mobileBottom = panelOpen ? Math.min(window.innerHeight * 0.49 + 45, (mapSection.current?.clientHeight ?? 700) - 200) : 110;
+    map.current?.fitBounds(bounds, {
+      padding: desktop ? { left: 420, right: 80, top: 100, bottom: 300 } : { left: 36, right: 36, top: 150, bottom: mobileBottom },
+      maxZoom: 17, duration: 500,
+    });
   }
 
   function updateSketch(points: Position[]) {
@@ -114,12 +135,22 @@ export function RoutePreview({ samples, demo, matchSketch }: {
     setError("");
   }
 
+  function placePoint(point: Position) {
+    if (!drawing || busy) return;
+    const points = [...sketch, point];
+    updateSketch(points);
+    if (mode === "pins" && points.length === 2) {
+      setDrawing(false);
+      setPlannerCollapsed(false);
+    }
+  }
+
   function loadSketch(points: Position[]) {
     const selected = mode === "pins" ? [points[0], points[points.length - 1]] : points;
     updateSketch(selected);
     setDrawing(false);
-    frame(selected);
-    mapSection.current?.scrollIntoView({ block: "nearest" });
+    frame(selected, true);
+    setPlannerCollapsed(false);
   }
 
   async function findSuggestions(event: FormEvent<HTMLFormElement>) {
@@ -145,9 +176,10 @@ export function RoutePreview({ samples, demo, matchSketch }: {
           ...limits, corridor_width_m: demo.corridor_width_m,
           route: { type: "LineString", coordinates: sketch },
         });
+      setRideActive(false);
       setActiveSuggestion(0);
       setResult(response);
-      frame([...sketch, ...(response.suggestions[0]?.route.coordinates ?? [])]);
+      frame([...sketch, ...(response.suggestions[0]?.route.coordinates ?? [])], true);
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Could not load suggestions.");
     } finally {
@@ -172,8 +204,40 @@ export function RoutePreview({ samples, demo, matchSketch }: {
   };
 
   return (
-    <main className="grid min-h-dvh bg-slate-950 text-slate-100 md:h-dvh md:grid-cols-[minmax(0,1fr)_24rem]">
-      <section ref={mapSection} aria-label="Route map" className="relative h-[54dvh] min-h-80 md:h-full">
+    <main className={styles.explorer} data-ride-active={rideActive}>
+      <header className={styles.topbar}>
+        <Link className={styles.brand} href="/" aria-label="RedRun home">
+          <span className={styles.brandMark}><PreviewIcon name="mountain" size={24} /></span>
+          <span>redrun<span className={styles.brandPeriod}>.</span></span>
+        </Link>
+        <div className={styles.location}><PreviewIcon name="pin" size={17} /><span>Little Cottonwood Canyon<span>Utah, United States</span></span></div>
+        <div className={styles.sourcePicker}>
+          <label htmlFor="source-sample">Source track</label>
+          <select id="source-sample" aria-label="Source sample" disabled={!mapReady} value={sample.id} onChange={(event) => {
+            const selected = samples.find((item) => item.id === event.target.value);
+            if (selected) {
+              setSample(selected);
+              updateSketch([]);
+              setDrawing(false);
+              setRideActive(false);
+              frame(selected.lines.flat());
+            }
+          }}>
+            {samples.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          </select>
+        </div>
+        <span className={styles.prototype}>Local preview</span>
+      </header>
+      <section ref={mapSection} aria-label="Route map" aria-describedby="map-keyboard-help" className={styles.map}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" || !(event.target instanceof HTMLCanvasElement) || !drawing) return;
+          const center = map.current?.getCenter();
+          if (center) {
+            event.preventDefault();
+            placePoint([center.lng, center.lat]);
+          }
+        }}>
+        <p id="map-keyboard-help" className={styles.srOnly}>Use arrow keys to move the map. During selection, press Enter to place a point at the map center.</p>
         <Map
           ref={map}
           mapStyle={MAP_STYLE}
@@ -182,28 +246,23 @@ export function RoutePreview({ samples, demo, matchSketch }: {
           cursor={drawing ? "crosshair" : "grab"}
           onLoad={() => {
             frame(sample.lines.flat());
+            map.current?.getCanvas().setAttribute("aria-describedby", "map-keyboard-help");
             setMapReady(true);
           }}
-          onClick={(event) => {
-            if (drawing && !busy) {
-              const points: Position[] = [...sketch, [event.lngLat.lng, event.lngLat.lat]];
-              updateSketch(points);
-              if (mode === "pins" && points.length === 2) setDrawing(false);
-            }
-          }}
+          onClick={(event) => placePoint([event.lngLat.lng, event.lngLat.lat])}
         >
           <NavigationControl position="top-right" showCompass={false} />
-          <ScaleControl position="bottom-left" unit="metric" />
+          <ScaleControl position="bottom-right" unit="metric" />
           <Source id="source-sample" type="geojson" data={sampleData}>
-            <Layer id="source-outline" type="line" paint={{ "line-color": "#172554", "line-width": 6 }} />
-            <Layer id="source-line" type="line" paint={{ "line-color": "#38bdf8", "line-width": 3.5 }} />
+            <Layer id="source-outline" type="line" paint={{ "line-color": "#172554", "line-width": 6, "line-opacity": suggestion ? 0.25 : 1 }} />
+            <Layer id="source-line" type="line" paint={{ "line-color": "#38bdf8", "line-width": 3.5, "line-opacity": suggestion ? 0.25 : 1 }} />
             <Layer id="source-points" type="circle" filter={["==", ["geometry-type"], "Point"]} paint={{
               "circle-color": "#38bdf8", "circle-radius": 4, "circle-stroke-color": "#172554", "circle-stroke-width": 2,
             }} />
           </Source>
           {mode === "pins" && sketch.map(([longitude, latitude], index) => (
             <Marker key={index} longitude={longitude} latitude={latitude} anchor="bottom">
-              <span className="flex size-7 items-center justify-center rounded-full border-2 border-white bg-violet-700 text-xs font-bold text-white shadow"
+              <span className={styles.pin}
                 aria-label={index === 0 ? "Start pin" : "Destination pin"}>{index === 0 ? "A" : "B"}</span>
             </Marker>
           ))}
@@ -235,171 +294,166 @@ export function RoutePreview({ samples, demo, matchSketch }: {
             </Source>
           )}
         </Map>
-        <RouteRide
-          key={suggestion?.id ?? sample.id}
-          mapRef={map}
-          lines={suggestion ? [suggestion.route.coordinates] : sample.lines}
-          name={suggestion?.name ?? sample.name}
-          ready={mapReady}
-        />
-        <div className="pointer-events-none absolute left-3 top-3 max-w-[70%] rounded-lg bg-slate-950/90 p-3 text-xs shadow-lg">
-          <p className="font-semibold">Little Cottonwood Canyon</p>
-          {!mapReady && <p className="mt-1">Loading terrain map…</p>}
-          <p className="mt-1 text-sky-300">Blue · Source sample</p>
-          {sketch.length > 0 && <p className="text-violet-300">{mode === "pins" ? "A · Start    B · Destination" : "Purple dash · Your sketch"}</p>}
-          {!!original?.totals.flagged_stretch_count && <p className="text-rose-300">Rose · Flagged sketch sections</p>}
-          {suggestion && <p className="text-orange-300">Orange · Mapped match</p>}
-          {drawing && <p className="mt-1">{mode === "pins"
-            ? sketch.length === 0 ? "Click to place the start." : "Click to place the destination."
-            : "Click the map to add points."}</p>}
+        <div className={styles.mapTools}>
+          <button type="button" disabled={!mapReady || rideActive} aria-pressed={terrain} className={styles.mapButton}
+            onClick={() => {
+              map.current?.getMap().setTerrain(terrain ? null : { source: "elevation", exaggeration: 1 });
+              setTerrain(!terrain);
+              map.current?.easeTo({ pitch: terrain ? 0 : 55, bearing: terrain ? 0 : -20, duration: 600 });
+            }}><PreviewIcon name="layers" />{terrain ? "2D" : "3D"}</button>
+          <button type="button" disabled={!mapReady || rideActive} className={styles.mapButton} aria-label="Fit route on map"
+            onClick={() => frame(suggestion?.route.coordinates ?? sample.lines.flat())}><PreviewIcon name="focus" /></button>
         </div>
-        <button type="button" disabled={!mapReady} aria-pressed={terrain} className="absolute right-3 top-24 rounded-md bg-slate-950 px-3 py-2 text-xs font-semibold text-white shadow disabled:opacity-45"
-          onClick={() => {
-            map.current?.getMap().setTerrain(terrain ? null : { source: "elevation", exaggeration: 1 });
-            setTerrain(!terrain);
-            map.current?.easeTo({ pitch: terrain ? 0 : 55, bearing: terrain ? 0 : -20, duration: 600 });
-          }}>{terrain ? "Back to 2D" : "View in 3D"}</button>
+        <div className={styles.legend} aria-label="Map legend">
+          <span><i className={styles.sourceSwatch} />Source track</span>
+          {sketch.length > 0 && <span><i className={styles.sketchSwatch} />{mode === "pins" ? "A: Start · B: Destination" : "Your sketch"}</span>}
+          {!!original?.totals.flagged_stretch_count && <span><i className={styles.flagSwatch} />Flagged section</span>}
+          {suggestion && <span><i className={styles.matchSwatch} />Mapped match</span>}
+        </div>
+        {(!mapReady || drawing) && <div className={styles.mapPrompt} role="status">
+          <span className={styles.promptDot} />
+          {!mapReady ? "Loading terrain map…" : mode === "pins"
+            ? sketch.length === 0 ? "Click the map to place your start." : "Click the map to place your destination."
+            : "Click the map to add points to your sketch."}
+        </div>}
+        <RouteRide key={suggestion?.id ?? sample.id} mapRef={map}
+          lines={suggestion ? [suggestion.route.coordinates] : sample.lines}
+          name={suggestion?.name ?? sample.name} ready={mapReady} onActiveChange={handleRideActive} />
       </section>
-      <aside className="space-y-5 overflow-y-auto border-slate-800 p-5 md:border-l">
-        <header>
-          <p className="text-xs font-semibold tracking-wider text-sky-300">REDRUN · LOCAL PREVIEW</p>
-          <h1 className="mt-1 text-2xl font-semibold">Route explorer</h1>
-          <p className="mt-1 text-sm text-slate-300">Pick two points, check mapped ski sections, and preview the terrain.</p>
+      <aside className={`${styles.planner} ${plannerCollapsed ? styles.collapsed : ""}`} aria-label="Route planner">
+        <header className={styles.plannerHeader}>
+          <div><p className={styles.eyebrow}><span />Route planner</p><h1>Find your line.</h1></div>
+          <button type="button" className={styles.collapseButton} aria-expanded={!plannerCollapsed}
+            aria-label={plannerCollapsed ? "Expand route planner" : "Collapse route planner"}
+            onClick={() => setPlannerCollapsed(!plannerCollapsed)}><PreviewIcon name="chevron" /></button>
         </header>
-        <section aria-labelledby="sample-label" className="space-y-3">
-          <div>
-            <label id="sample-label" htmlFor="source-sample" className="block text-sm font-semibold">
-              Source sample
-            </label>
-            <select id="source-sample" disabled={!mapReady} className={INPUT} value={sample.id} onChange={(event) => {
-              const selected = samples.find((item) => item.id === event.target.value);
-              if (selected) {
-                setSample(selected);
-                frame(selected.lines.flat());
-              }
-            }}>
-              {samples.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-            </select>
-          </div>
-          <div className="rounded-lg border border-slate-700 bg-slate-900 p-3 text-sm">
-            <p className="font-medium">{sample.grade ? `Skitour ski grade ${sample.grade}` : "Ski grade unavailable"}</p>
-            <p className="mt-1 text-slate-300">{sample.points.toLocaleString()} source points</p>
-            {sample.gapCount !== null ? (
-              <p className="mt-2 text-amber-200">
-                Breaks over 100 m: {sample.gapCount}. Largest interval: {sample.largestGapM} m.
-                Endpoint gap: {sample.endpointGapM} m.
-              </p>
-            ) : (
-              <p className="mt-2 text-amber-200">Forest Service centerline. Winter use and skiing difficulty are unknown.</p>
-            )}
-            <a href={sample.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sky-300 underline">
-              {sample.source}
-            </a>
-            {sample.license && <span className="ml-2 text-xs text-slate-300">{sample.license}</span>}
-          </div>
-        </section>
-        <form onSubmit={findSuggestions} className="space-y-3 border-t border-slate-800 pt-4">
-          <div>
-            <h2 className="font-semibold">Find nearby sections</h2>
-            <p className="mt-1 text-xs text-slate-300">Forecast fixture · {demo.date}. Source samples are for inspection.</p>
-          </div>
-          <div className="flex gap-2">
-            {(["pins", "sketch"] as const).map((option) => (
-              <button type="button" key={option} disabled={busy} aria-pressed={mode === option}
-                className={`${CONTROL} ${mode === option ? "bg-slate-700" : ""}`}
-                onClick={() => {
-                  if (mode !== option) {
-                    setMode(option);
-                    setDrawing(false);
-                    updateSketch([]);
-                  }
-                }}>{option === "pins" ? "Two points" : "Sketch"}</button>
-            ))}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" disabled={busy || !mapReady} className={CONTROL}
-              onClick={() => loadSketch(demo.route.coordinates)}>Load no-match example</button>
-            <button type="button" disabled={busy || !mapReady} className={CONTROL}
-              onClick={() => loadSketch(matchSketch)}>Load match example</button>
-            <button type="button" disabled={busy || !mapReady} aria-pressed={drawing} className={CONTROL}
+        <div className={styles.plannerBody}>
+          <p className={styles.intro}>Choose two points. Find mapped ski sections that match your level.</p>
+          <form id="route-planner-form" onSubmit={findSuggestions} className={styles.routeForm}>
+            <div className={styles.segmented} aria-label="Route selection method">
+              {(["pins", "sketch"] as const).map((option) => (
+                <button type="button" key={option} disabled={busy || rideActive} aria-pressed={mode === option}
+                  onClick={() => {
+                    if (mode !== option) {
+                      setMode(option);
+                      setDrawing(false);
+                      updateSketch([]);
+                    }
+                  }}><PreviewIcon name={option === "pins" ? "pin" : "route"} size={16} />{option === "pins" ? "Two points" : "Sketch a route"}</button>
+              ))}
+            </div>
+            {mode === "pins" && <div className={styles.endpoints}>
+              {[0, 1].map((index) => <div className={styles.endpoint} key={index}>
+                <span className={`${styles.endpointLetter} ${index === 1 ? styles.destinationLetter : ""}`}>{index === 0 ? "A" : "B"}</span>
+                <div><span>{index === 0 ? "Start" : "Destination"}</span>
+                  <p>{sketch[index] ? `${sketch[index][1].toFixed(4)}, ${sketch[index][0].toFixed(4)}` : "Choose on the map"}</p></div>
+                {sketch[index] && <span className={styles.placed}>Placed</span>}
+              </div>)}
+            </div>}
+            <button type="button" disabled={busy || !mapReady || rideActive} aria-pressed={drawing} className={styles.pickButton}
               onClick={() => {
                 if (!drawing) {
                   if (mode === "pins") updateSketch([]);
-                  mapSection.current?.scrollIntoView({ block: "start" });
+                  setPlannerCollapsed(true);
                 }
                 setDrawing(!drawing);
-              }}>{drawing ? "Finish selection" : mode === "pins" ? "Pick start and destination" : "Draw on map"}</button>
-            {sketch.length > 0 && <button type="button" disabled={busy} className={CONTROL}
-              onClick={() => updateSketch(sketch.slice(0, -1))}>Undo point</button>}
-            {sketch.length > 0 && <button type="button" disabled={busy} className={CONTROL}
-              onClick={() => updateSketch([])}>{mode === "pins" ? "Clear pins" : "Clear sketch"}</button>}
+              }}><PreviewIcon name={drawing ? "close" : "pin"} size={16} />
+              {drawing ? "Finish selection" : mode === "pins" ? "Pick start and destination" : "Draw on map"}</button>
+            <div className={styles.selectionStatus}>
+              <span>{mode === "pins" ? `${sketch.length} of 2 pins placed` : `${sketch.length} sketch points`}</span>
+              {sketch.length > 0 && <div>
+                <button type="button" disabled={busy || rideActive} onClick={() => updateSketch(sketch.slice(0, -1))}>Undo point</button>
+                <button type="button" disabled={busy || rideActive} onClick={() => { updateSketch([]); setDrawing(false); }}>
+                  {mode === "pins" ? "Clear pins" : "Clear sketch"}</button>
+              </div>}
+            </div>
+            <fieldset disabled={busy || rideActive} className={styles.filters}>
+              <label className={styles.field}><span>Ski level <span className={styles.fieldHint}>OSM difficulty limit</span></span>
+                <select aria-label="Maximum OSM difficulty" value={grade} onChange={(event) => {
+                  setGrade(event.target.value as SuggestionsRequest["max_difficulty"]);
+                  setResult(null);
+                }}>{GRADES.map((value) => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</option>)}</select>
+              </label>
+              <details className={styles.details}>
+                <summary>Distance, climb & exposure <PreviewIcon name="chevron" size={15} /></summary>
+                <div className={styles.filterGrid}>
+                  <label className={styles.field}>Maximum distance (m)
+                    <input type="number" min={1} max={100000} required value={distance || ""}
+                      onChange={(event) => { setDistance(Number(event.target.value)); setResult(null); }} />
+                  </label>
+                  <label className={styles.field}>Maximum climb (ft)
+                    <input type="number" min={0} max={30000} required value={climb}
+                      onChange={(event) => { setClimb(Number(event.target.value)); setResult(null); }} />
+                  </label>
+                  <label className={`${styles.field} ${styles.fullWidth}`}>Flag slopes at or above
+                    <select value={threshold} onChange={(event) => {
+                      setThreshold(event.target.value as typeof threshold);
+                      setResult(null);
+                    }}><option value="considerable">Considerable</option><option value="moderate">Moderate</option><option value="low">Low</option></select>
+                  </label>
+                </div>
+              </details>
+            </fieldset>
+            <button type="submit" disabled={sketch.length < 2 || busy || rideActive} className={`${styles.primaryButton} ${styles.formSubmit}`}>
+              {busy ? "Checking sections…" : "Find mapped sections"}<PreviewIcon name="arrow" size={18} />
+            </button>
+            <details className={`${styles.details} ${styles.examples}`}>
+              <summary>Try an example <PreviewIcon name="chevron" size={15} /></summary>
+              <p>Test the route search with known sample points.</p>
+              <div className={styles.exampleButtons}>
+                <button type="button" disabled={busy || !mapReady || rideActive} onClick={() => loadSketch(matchSketch)}>Load match example</button>
+                <button type="button" disabled={busy || !mapReady || rideActive} onClick={() => loadSketch(demo.route.coordinates)}>Load no-match example</button>
+              </div>
+            </details>
+          </form>
+          <div className={styles.fixtureNote}><PreviewIcon name="info" size={16} />
+            <p><strong>Demo forecast · {demo.date}</strong><span>Saved test data. Current conditions are not included.</span></p>
           </div>
-          <p className="text-xs text-slate-300">{mode === "pins"
-            ? `${sketch.length} of 2 pins placed`
-            : `${sketch.length} sketch ${sketch.length === 1 ? "point" : "points"}`}</p>
-          <fieldset disabled={busy} className="grid grid-cols-2 gap-3 text-xs">
-            <label>Maximum OSM difficulty
-              <select className={INPUT} value={grade} onChange={(event) => {
-                setGrade(event.target.value as SuggestionsRequest["max_difficulty"]);
-                setResult(null);
-              }}>{GRADES.map((value) => <option key={value}>{value}</option>)}</select>
-            </label>
-            <label>Flag slopes at or above
-              <select className={INPUT} value={threshold} onChange={(event) => {
-                setThreshold(event.target.value as typeof threshold);
-                setResult(null);
-              }}>
-                <option value="considerable">Considerable</option>
-                <option value="moderate">Moderate</option>
-                <option value="low">Low</option>
-              </select>
-            </label>
-            <label>Maximum distance (m)
-              <input className={INPUT} type="number" min={1} max={100000} required value={distance || ""}
-                onChange={(event) => { setDistance(Number(event.target.value)); setResult(null); }} />
-            </label>
-            <label>Maximum climb (ft)
-              <input className={INPUT} type="number" min={0} max={30000} required value={climb}
-                onChange={(event) => { setClimb(Number(event.target.value)); setResult(null); }} />
-            </label>
-          </fieldset>
-          <button type="submit" disabled={sketch.length < 2 || busy}
-            className="w-full rounded-md bg-sky-300 px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-45">
-            {busy ? "Checking sections…" : "Check nearby sections"}
-          </button>
-        </form>
-        <div aria-live="polite" className="space-y-3 text-sm">
-          {error && <p role="alert" className="rounded-md bg-red-950 p-3 text-red-200">{error}</p>}
-          {result && (
-            <section className="space-y-3 rounded-lg border border-slate-700 bg-slate-900 p-3">
-              <p className="font-semibold">{result.status === "found" ? "Mapped matches" : "No match"}</p>
+          <div ref={feedback} aria-live="polite" aria-busy={busy}>
+            {error && <p role="alert" className={styles.error}>{error} Check the API connection and try again.</p>}
+            {result && <section className={styles.results} aria-label="Route search results">
+              <div className={styles.resultHeading}><span className={styles.eyebrow}>Search results</span>
+                <span className={styles.resultCount}>{result.suggestions.length} {result.suggestions.length === 1 ? "match" : "matches"}</span></div>
+              <h2>{result.status === "found" ? "A line to explore." : "No mapped match."}</h2>
               <p>{result.message}</p>
-              <p className="text-xs text-slate-300">
-                Forecast: {result.source} · {result.date}
-                {original && ` · ${Math.round(original.totals.flagged_length_m)} m flagged on sketch`}
-              </p>
-              {forcedByWarning && <p>Warning applied the Low threshold.</p>}
               {result.suggestions.map((item, index) => (
-                <button key={item.id} type="button" aria-pressed={index === activeSuggestion}
-                  className={`${CONTROL} block w-full text-left`}
+                <button key={item.id} type="button" disabled={rideActive} aria-pressed={index === activeSuggestion} className={styles.resultCard}
                   onClick={() => { setActiveSuggestion(index); frame([...sketch, ...item.route.coordinates]); }}>
-                  {item.name ?? "Unnamed section"} · {item.difficulty}
-                  <span className="block text-xs text-slate-300">
-                    {Math.round(item.analysis.totals.length_m)} m · {Math.round(item.analysis.totals.climb_ft)} ft climb
-                    {"comparison" in item && ` · ${Math.round(item.comparison.max_deviation_m)} m from sketch`}
-                  </span>
+                  <span><i className={styles.matchSwatch} />{item.name ?? "Unnamed section"}</span>
+                  <span className={styles.resultStats}>{Math.round(item.analysis.totals.length_m)} m<span>·</span>{Math.round(item.analysis.totals.climb_ft)} ft climb<span>·</span>{item.difficulty}</span>
+                  {"comparison" in item && <span className={styles.resultStats}>{Math.round(item.comparison.max_deviation_m)} m from sketch</span>}
                 </button>
               ))}
-              {suggestion && <p className="text-xs">Endpoint gaps: {Math.round(suggestion.start_distance_m)} m at start and {Math.round(suggestion.end_distance_m)} m at end.</p>}
-              {Object.entries(result.excluded).map(([reason, count]) => (
-                <p key={reason} className="text-xs text-slate-300">{EXCLUSIONS[reason] ?? reason}: {count}</p>
-              ))}
-              <p className="text-xs text-slate-400">{result.catalog.attribution}</p>
-              {suggestion && <p className="text-xs text-amber-200">Mapped section. Confirm the full itinerary and current conditions.</p>}
-            </section>
-          )}
+              {suggestion && <p className={styles.warning}>Mapped section only. Check the full route and current conditions.</p>}
+              <details className={styles.details}><summary>Match details <PreviewIcon name="chevron" size={15} /></summary>
+                <p>Forecast: {result.source} · {result.date}</p>
+                {original && <p>{Math.round(original.totals.flagged_length_m)} m flagged on sketch.</p>}
+                {forcedByWarning && <p>Warning applied the Low threshold.</p>}
+                {suggestion && <p>Endpoint gaps: {Math.round(suggestion.start_distance_m)} m at start and {Math.round(suggestion.end_distance_m)} m at end.</p>}
+                {Object.entries(result.excluded).map(([reason, count]) => <p key={reason}>{EXCLUSIONS[reason] ?? reason}: {count}</p>)}
+                <p>{result.catalog.attribution}</p>
+              </details>
+            </section>}
+          </div>
+          <details className={`${styles.details} ${styles.sourceDetails}`}>
+            <summary>About this source track <span className={styles.dataBadge}>{sample.gapCount !== null ? `${sample.gapCount} data ${sample.gapCount === 1 ? "gap" : "gaps"}` : "Grade unknown"}</span><PreviewIcon name="chevron" size={15} /></summary>
+            <p><strong>{sample.name}</strong></p>
+            <p>{sample.grade ? `Skitour ski grade ${sample.grade}` : "Ski grade unavailable"} · {sample.points.toLocaleString()} source points</p>
+            {sample.gapCount !== null
+              ? <p>Breaks over 100 m: {sample.gapCount}. Largest interval: {sample.largestGapM} m. Endpoint gap: {sample.endpointGapM} m.</p>
+              : <p>Forest Service centerline. Winter use and skiing difficulty are unknown.</p>}
+            <p><a href={sample.url} target="_blank" rel="noreferrer">{sample.source}</a>{sample.license && ` · ${sample.license}`}</p>
+            <p>Source tracks are for inspection. Playback stops at each data gap.</p>
+          </details>
+        </div>
+        <div className={styles.mobileActions}>
+          <span>Demo forecast · {demo.date}</span>
+          <button type="submit" form="route-planner-form" disabled={sketch.length < 2 || busy || rideActive} className={styles.primaryButton}>
+            {busy ? "Checking sections…" : "Find mapped sections"}<PreviewIcon name="arrow" size={18} />
+          </button>
         </div>
       </aside>
+      <span className={styles.regionLabel}>WASATCH RANGE <span>40.56° N / 111.68° W</span></span>
     </main>
   );
 }
