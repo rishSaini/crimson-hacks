@@ -8,7 +8,8 @@ Owns the forecast, briefing and agent modules in `api/app/`, plus `fixtures/demo
 - [ ] Fetch `utahavalanchecenter.org/forecast/salt-lake/json` with the token, a real User-Agent and a contact email, and confirm the rose's real format decodes
 - [ ] Check what the feed returns before daily ratings start, and that it decodes to `ratings_issued: false`
 - [ ] If the token doesn't arrive in time, enter the demo day's values from the forecast page by hand. Avalanche.org can't replace it: it has one overall rating per zone, with no rose, problems or bottom line
-- [x] Pick the demo day: Feb 18, 2026, with High on E-N-NW above 8,000 ft and an Avalanche Warning
+- [x] Pick the Warning example: Feb 18, 2026, with High on E-N-NW above 8,000 ft and an Avalanche Warning
+- [ ] Save the main demo day, Feb 21, 2026: compare a screenshot of its rose with the written summary in the archived forecast before saving
 - [x] Save its real rose, bottom line, problems and alert to `fixtures/demo_days.json`, with `source: demo_replay`
 - [x] Confirm the `forecast_url` in `demo_days.json` opens the Feb 18 forecast in a browser
 - [ ] Start hand-tracing the 10 to 15 Cottonwood tours as GeoJSON, each with trailhead, objective, distance and climb (share with Terrain)
@@ -49,7 +50,7 @@ Reroute comes first (see `tasks/terrain.md`). Then:
 - [ ] Record a 90-second backup demo video
 - [ ] Rehearse the 3-minute pitch at least 5 times with a timer
 - [ ] Verify the deaths cited in the hook against UAC's report and the February 2026 source
-- [ ] Prepare for the demo day's weight: Feb 18, 2026 is archived in relation to a fatality that day. Decide how to acknowledge it on stage, or choose another day
+- [ ] Prepare for the demo days' weight: Feb 18 and Feb 21, 2026 are both archived in relation to fatalities. Decide how to acknowledge that on stage
 - [ ] Say in the pitch that UAC recommended avoiding all avalanche terrain that day, and that RedRun shows where a route crosses it rather than clearing anyone to go
 
 ## Last 2 hours: freeze

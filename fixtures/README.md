@@ -24,7 +24,7 @@ The stubs don't return these other states, so import them directly when building
 
 `demo_days.json` holds real replayed forecast days, keyed by date, with `"source": "demo_replay"`. **Unlike the other files, this is real UAC data.** Its `bottom_line`, `problems` and `alert` text is verbatim, including any typos, so don't edit it. Copy new days from a published UAC forecast, and never write them from memory.
 
-`2026-02-18` was checked against UAC's forecast page and its written danger summary. It's archived in relation to a fatality that day, so treat it with care.
+`2026-02-18` was checked against UAC's forecast page and its written danger summary. It's the Warning example. It's archived in relation to a fatality that day, so treat it with care.
 
 `api/tests/test_contract.py` checks these files against the models.
 

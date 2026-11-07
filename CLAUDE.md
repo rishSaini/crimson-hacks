@@ -83,14 +83,18 @@ There are two levels:
 
 Settings exposes `moderate` as "Also avoid Moderate" and `low` as "Beginner mode: stay off and out from under slopes 30° and steeper", with the subtitle "Checks slopes on your route and within 300 m uphill."
 
-Overhead exposure: a gray point is flagged if uphill cells within 300 m are 30 degrees or steeper and rated at or above `avoid_at_or_above`, or unrated. More "no clean line" results at `low` are expected, and the fallback options handle them.
+A point's slope is the steepest cell in its 3 by 3 window, and its rating is the worst among the 30 degree or steeper cells in that window, so a point on a ridge can't take the milder side's rating. Unrated follows the same rule as band ties.
+
+Overhead exposure: a gray point is flagged by a cell within 300 m that is 30 degrees or steeper, rated at or above `avoid_at_or_above` or unrated, higher than the point, and facing it: the bearing from the cell to the point is within 60 degrees of the cell's aspect. More "no clean line" results at `low` are expected, and the fallback options handle them.
+
+Every flagged run stays in `segments`, however short. For the banner and pins, runs less than 50 m apart along the route merge into one entry in `flagged_stretches`, and `flagged_stretch_count` counts those.
 
 What the route shows depends on these totals:
 
 | Route | Banner | Button |
 | --- | --- | --- |
 | `flagged_stretch_count` above 0 | Flagged stretches | Primary filled "Reroute" |
-| Nothing flagged, `steep_segment_count` above 0 | "N stretches in avalanche terrain, rated Low today (X m). Not rerouted by default." The rating names what's in `steep_ratings`: "Low", "Moderate" or "Low to Moderate" | Secondary outline "Avoid these too", which reruns the analysis and reroute at the lowest rating present (`steep_ratings[0]`) |
+| Nothing flagged, `steep_segment_count` above 0 | "N stretches in avalanche terrain, rated Low today (X m), with N from `steep_stretch_count`. Not rerouted by default." The rating names what's in `steep_ratings`: "Low", "Moderate" or "Low to Moderate" | Secondary outline "Avoid these too", which reruns the analysis and reroute at the lowest rating present (`steep_ratings[0]`) |
 | Both 0 | Gray "No flags found on this route today." | None |
 
 The primary Reroute button shows if and only if `flagged_stretch_count` is above 0.
@@ -99,7 +103,7 @@ The primary Reroute button shows if and only if `flagged_stretch_count` is above
 
 ### Alerts
 
-`ForecastResponse.alert` has a `level` (`none`, `watch`, `warning` or `special_bulletin`) and `what`, `where`, `what_to_do`, `valid_from` and `valid_to`. Any level but `none` shows as a full-width banner above everything.
+`ForecastResponse.alert` has a `level` (`none`, `watch`, `warning` or `special_bulletin`) and `what`, `where`, `what_to_do`, `valid_from` and `valid_to`. Special bulletins have no "What to do" section, so `what_to_do` can be null there, and we never write one for UAC. Any level but `none` shows as a full-width banner above everything.
 
 On a forecast day with a `warning`:
 

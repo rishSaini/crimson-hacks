@@ -23,6 +23,10 @@ The forecast never blocks anyone: Karthik and Ali can use the fixtures until you
 5. **Alerts:** a full-width banner above everything. A Warning forces `avoid_at_or_above` to `low` for that forecast day only, and the saved setting doesn't change. Karthik applies it on the server, and Ali builds the banner.
 6. **UAC's text is stored and shown verbatim,** attributed to UAC with a link. The "safe" check only applies to RedRun's own strings and LLM output.
 7. **Warning days:** the comparison card adds "UAC recommends avoiding all avalanche terrain today." Nothing may imply a rerouted line makes going out okay.
+8. **Worst rating in the window:** a point takes the worst rating among steep cells in its 3 by 3 window. Karthik reviews this on `terrain-review-rulings`.
+9. **Overhead direction:** a cell counts only if it's higher than the point and faces it, within 60 degrees. The distance limit stays 300 m.
+10. **Short runs:** all flagged runs stay in the data, and runs under 50 m apart merge for the banner and pins. The 30 m drop rule is gone.
+11. **Main demo day:** Feb 21, 2026, with a Special Bulletin and no forced threshold. Feb 18 stays as the Warning example. Feb 21 isn't saved yet: its rose still has to be checked against the written summary.
 
 ## What others need from you
 
@@ -41,5 +45,5 @@ The forecast never blocks anyone: Karthik and Ali can use the fixtures until you
 - Add `POST /agent` and its models. It isn't stubbed yet, and it's a contract change, so tell the team first.
 - Record the backup demo video and rehearse the 3-minute pitch.
 - Verify the deaths cited in the pitch's hook against UAC's report and the February 2026 source.
-- Decide how to acknowledge Feb 18 on stage. The archived forecast is kept in relation to a fatality that day.
+- Decide how to acknowledge Feb 18 and Feb 21 on stage. Both archived forecasts are kept in relation to fatalities, and Feb 21's text describes the two that week.
 - Add the design doc to the repo. It isn't committed yet, so Karthik and Ali don't have it here.

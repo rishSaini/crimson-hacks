@@ -17,7 +17,7 @@ Owns `data/` and the terrain modules in `api/app/`. Turn `api/tests/test_terrain
 - [ ] Read elevation, slope and aspect per point, using the max slope in a 3 by 3 cell window
 - [ ] Rate each point with `rose_value`, so points within 100 ft of a band boundary take the higher adjacent rating
 - [ ] Score each point by the table in `CLAUDE.md`, with `flagged` from `is_reroute_target` and the request's `avoid_at_or_above`. Unrated 30 degrees or more is always flagged, with `flag_reason: unrated_terrain`
-- [ ] Merge same-color points into segments, drop flagged runs under 30 m, compute totals including `steep_segment_count` and `steep_length_m`
+- [x] Merge same-color points into segments and compute totals. Keep every flagged run, and merge runs under 50 m apart into `flagged_stretches` for the banner and pins
 - [ ] Replace the `POST /analyze` stub, with `source` taken from the forecast it used
 - [ ] Apply `effective_avoid_at_or_above` from `app/forecast.py` to the request's setting and that day's `alert.level`, then return the applied value and `forced_by_warning`. Do the same in `POST /alternative`
 - [ ] Spot-check 3 known slopes against a published slope-angle map (hour 2)
@@ -29,7 +29,7 @@ Owns `data/` and the terrain modules in `api/app/`. Turn `api/tests/test_terrain
 
 ## Hour 12 to 18: stretch, in this order
 
-- [ ] Overhead exposure: for each gray point, flag it if uphill cells within 300 m are 30 degrees or steeper and `is_reroute_target` is true for them under `avoid_at_or_above`. Unrated always counts. Expect more "no clean line" results at `low`, and let the fallbacks handle them
+- [x] Overhead exposure: for each gray point, flag it if a cell within 300 m is 30 degrees or steeper, higher than the point, facing it (bearing from the cell to the point within 60 degrees of its aspect), and `is_reroute_target` is true for it under `avoid_at_or_above`. Unrated always counts. Expect more "no clean line" results at `low`, and let the fallbacks handle them
 - [ ] Reroute, starting no later than hour 12. Replace the `POST /alternative` stub:
   - [ ] Take anchors about 100 m outside each flagged stretch and keep the rest of the line
   - [ ] Fence a corridor: buffer the stretch by `corridor_width_m`, off-limits outside it

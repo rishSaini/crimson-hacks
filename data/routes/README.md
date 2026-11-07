@@ -68,10 +68,10 @@ A 59 m White Pine Winter Trail section passes the current checks when used as th
 This confirms the real catalog path through the API. It provides limited evidence for complete tour recommendations.
 
 The forecast remains `source: fixture` until the forecast owner connects published forecasts.
-The overhead check follows the team's rule for higher steep cells within 300 m.
+The overhead check follows the team's rule for higher steep cells within 300 m that face the route.
 It does not model avalanche flow or runout.
 Access, current closures, obstacles, snow coverage, and route completeness require separate confirmation.
-The analysis preserves flagged stretches shorter than 30 m. Dropping those flags remains unresolved in the shared contract.
+The analysis keeps every flagged run, and `flagged_stretches` merges runs under 50 m apart for the banner and pins.
 
 ## Rebuild the catalog
 
