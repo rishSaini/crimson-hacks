@@ -118,6 +118,18 @@ If `ratings_issued` is false (all 24 rose values are 0), show the banner "No dan
 
 A rerouted-away original line is always dashed **gray**, whatever its colors were, so it can't be confused with dashed magenta.
 
+## Plan mode
+
+Plan, flag and reroute are three separate steps:
+
+1. **Plan:** `POST /plan` takes `start`, `end`, `date` and `avoid_at_or_above`, and finds a sensible line from terrain alone. The forecast never changes the line. The search covers the points' bounding box plus 1.5 km.
+2. **Flag:** the line goes through route analysis, and the response carries that result, flags included. `status` is `found` even if flagged. `no_route` only means slopes of 45 degrees or more block every way through.
+3. **Reroute:** only this step avoids flagged terrain. Pass `avoid=(rose, threshold)` to `build_cost_grid`, which makes flagged terrain near-blocking. If no clean line exists, the reroute says "no clean line" and offers fallbacks, and never loosens a threshold.
+
+Terrain cost per cell is 1, plus a skinning penalty per degree above 25, a penalty at 30 degrees or more and for OSM `landuse=winter_sports` areas, and a bonus on OSM paths. Cells at 45 degrees or more are blocked. A plan must always say it's a computer-generated line, not a known skin track.
+
+OSM data comes from `data/prep_osm.py`, fetched once and committed in `data/osm/`. Keep its ODbL attribution.
+
 ## Conventions
 
 - Positions are GeoJSON `[lng, lat]`. Distances are meters; elevation and climb are feet; the DEM is in meters, so convert.

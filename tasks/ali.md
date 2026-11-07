@@ -41,6 +41,10 @@ The stubs only return the default case. Import the rest from `fixtures/` directl
 | Warning day analysis and reroute | `analyze.warning.response.json`, `alternative.warning.response.json` |
 | No clean line | `alternative.no_line.response.json` |
 
+## Plan mode
+
+The Draw/Plan toggle and Plan mode are in `components/RouteWorkspace.tsx`, `PlanLayers.tsx`, `PlanPanel.tsx` and `lib/usePlan.ts`. Draw mode is empty, ready for your click-to-draw. A plan can come back flagged, so show its flags the same way as a drawn route: use `analysis.flagged_stretches` for pins and the banner, and show the Reroute button if there are any, once the real `/alternative` lands. Keep the "Planning" state visible, since plans take a few seconds. It uses a fixed date and setting for now, so connect it to your date picker and settings.
+
 ## What you need from others
 
 | From | What | When |
