@@ -69,12 +69,36 @@ def test_get_forecast_returns_fixture():
 
 @pytest.mark.parametrize(
     "path, name",
-    [("/analyze", "analyze"), ("/alternative", "alternative"), ("/briefing", "briefing")],
+    [("/alternative", "alternative"), ("/briefing", "briefing")],
 )
 def test_post_endpoint_returns_fixture(path, name):
     response = client.post(path, json=fixture(f"{name}.request.json"))
     assert response.status_code == 200
     assert response.json() == fixture(f"{name}.response.json")
+
+
+def test_analyze_uses_route_geometry_and_preserves_forecast_source():
+    request = fixture("analyze.request.json")
+    response = client.post("/analyze", json=request)
+    assert response.status_code == 200, response.text
+    body = response.json()
+    assert body["source"] == fixture("forecast.response.json")["source"]
+    assert body["date"] == request["date"]
+    segments = body["segments"]["features"]
+    assert segments[0]["geometry"]["coordinates"][0] == pytest.approx(
+        request["route"]["coordinates"][0]
+    )
+    assert segments[-1]["geometry"]["coordinates"][-1] == pytest.approx(
+        request["route"]["coordinates"][-1]
+    )
+    assert body["totals"]["length_m"] == pytest.approx(
+        sum(segment["properties"]["length_m"] for segment in segments)
+    )
+
+    request["route"]["coordinates"] = request["route"]["coordinates"][:2]
+    shortened = client.post("/analyze", json=request)
+    assert shortened.status_code == 200, shortened.text
+    assert 0 < shortened.json()["totals"]["length_m"] < body["totals"]["length_m"]
 
 
 def test_analyze_rejects_a_route_with_one_point():

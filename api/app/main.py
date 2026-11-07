@@ -1,13 +1,14 @@
-"""RedRun API. Every endpoint is a stub that returns data from fixtures/ for now."""
+"""RedRun API."""
 
 import os
 from datetime import date as Date
 from pathlib import Path
 from typing import TypeVar
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from rasterio.errors import RasterioIOError
 
 from app.models import (
     AlternativeRequest,
@@ -17,6 +18,10 @@ from app.models import (
     BriefingRequest,
     BriefingResponse,
     ForecastResponse,
+)
+from app.route_analysis import TerrainCoverageError, TerrainGrids, analyze_route, load_grids
+from app.route_suggestions import (
+    SuggestionsRequest, SuggestionsResponse, load_catalog, suggest_routes,
 )
 
 FIXTURES_DIR = Path(__file__).resolve().parents[2] / "fixtures"
@@ -46,7 +51,35 @@ def get_forecast(zone: str = "salt-lake", date: Date | None = None) -> ForecastR
 
 @app.post("/analyze")
 def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
-    return load_fixture("analyze.response.json", AnalyzeResponse)
+    forecast, grids = terrain_context(request.date)
+    try:
+        return analyze_route(request, forecast, grids)
+    except TerrainCoverageError as error:
+        raise HTTPException(422, str(error)) from error
+
+
+def terrain_context(date: Date) -> tuple[ForecastResponse, TerrainGrids]:
+    forecast = get_forecast(date=date)
+    if forecast.date != date:
+        raise HTTPException(404, "No forecast is available for the requested date.")
+    try:
+        grids = load_grids()
+    except (RasterioIOError, ValueError) as error:
+        raise HTTPException(503, "The terrain grids are unavailable.") from error
+    return forecast, grids
+
+
+@app.post("/suggestions")
+def suggestions(request: SuggestionsRequest) -> SuggestionsResponse:
+    forecast, grids = terrain_context(request.date)
+    try:
+        catalog = load_catalog()
+    except (OSError, ValueError) as error:
+        raise HTTPException(503, "The route catalog is unavailable.") from error
+    try:
+        return suggest_routes(request, forecast, grids, catalog)
+    except TerrainCoverageError as error:
+        raise HTTPException(422, str(error)) from error
 
 
 @app.post("/alternative")

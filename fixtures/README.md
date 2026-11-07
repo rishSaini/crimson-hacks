@@ -27,3 +27,7 @@ The stubs don't return these other states, so import them directly when building
 `2026-02-18` was checked against UAC's forecast page and its written danger summary. It's archived in relation to a fatality that day, so treat it with care.
 
 `api/tests/test_contract.py` checks these files against the models.
+
+`SuggestionsRequest` and `SuggestionsResponse` examples are in `suggestions.request.json` and `suggestions.response.json`.
+They use the real local catalog and terrain grids with the forecast fixture.
+The current demo drawing returns `no_match`. See `data/routes/README.md` for the coverage limits.
