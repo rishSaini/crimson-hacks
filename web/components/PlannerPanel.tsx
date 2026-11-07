@@ -2,6 +2,7 @@
 
 import type { AlternativeResponse, PlanResponse } from "@/lib/api";
 import { DEMO_DAYS, type AvoidSetting, type RoutePlanner } from "@/lib/useRoutePlanner";
+import { DangerRose } from "@/components/DangerRose";
 
 const OUTLINE = "rounded-md border border-slate-600 px-3 py-2 text-sm hover:bg-slate-800 disabled:opacity-45";
 const FILLED = "w-full rounded-md bg-sky-300 px-3 py-2 text-sm font-semibold text-slate-950 disabled:opacity-45";
@@ -40,6 +41,9 @@ function ForecastCard({ planner }: { planner: RoutePlanner }) {
           {alert.what_to_do && <p>{alert.what_to_do}</p>}
         </div>
       )}
+      <div className="my-2 flex justify-center">
+        <DangerRose rose={forecast.rose} />
+      </div>
       <p className="whitespace-pre-line text-slate-300">{forecast.bottom_line}</p>
       <a href={forecast.forecast_url} target="_blank" rel="noreferrer" className="inline-block text-sky-300 underline">
         Read the full forecast
@@ -135,7 +139,7 @@ export function PlannerPanel({ planner }: { planner: RoutePlanner }) {
         {planner.points.length === 0 ? "Click the map to place your start." : "Click the map to place your destination."}
       </p>}
       {planning && <p>Planning a route…</p>}
-      {planner.planError && <p role="alert" className="rounded-md bg-red-950 p-3 text-red-200">Couldn&apos;t plan this route: {planner.planError}</p>}
+      {planner.planError && <p role="alert" className="rounded-md bg-red-950 p-3 text-red-200">Couldn't plan this route: {planner.planError}</p>}
 
       {plan && (
         <section data-testid="plan-result" className="space-y-2">
@@ -167,7 +171,7 @@ export function PlannerPanel({ planner }: { planner: RoutePlanner }) {
               if (lowest) void planner.runReroute(planner.corridor, lowest, lowest);
             }}>{reroute.status === "loading" ? "Finding a way around…" : "Avoid these too"}</button>
           )}
-          {reroute.status === "error" && <p role="alert" className="rounded-md bg-red-950 p-3 text-red-200">Couldn&apos;t reroute: {reroute.message}</p>}
+          {reroute.status === "error" && <p role="alert" className="rounded-md bg-red-950 p-3 text-red-200">Couldn't reroute: {reroute.message}</p>}
           {reroute.status === "done" && (
             <RerouteResult planner={planner} result={reroute.result} override={reroute.override} />
           )}
