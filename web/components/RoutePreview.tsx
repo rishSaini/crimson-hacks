@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Map, { Layer, Marker, NavigationControl, ScaleControl, Source, type MapRef } from "react-map-gl/maplibre";
 import { setWorkerUrl, type StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { api, type EndpointSuggestionsResponse, type SuggestionsRequest, type SuggestionsResponse } from "@/lib/api";
-import { RouteRide } from "@/components/RouteRide";
+import { RouteRide, type PreviewTarget } from "@/components/RouteRide";
 import { PreviewIcon } from "@/components/PreviewIcon";
 import styles from "./RoutePreview.module.css";
 
@@ -86,6 +86,7 @@ export function RoutePreview({ samples, demo, matchSketch }: {
   const [sketch, setSketch] = useState<Position[]>([]);
   const [mode, setMode] = useState<"pins" | "sketch">("pins");
   const [drawing, setDrawing] = useState(false);
+  const [previewTarget, setPreviewTarget] = useState<PreviewTarget>("source");
   const [terrain, setTerrain] = useState(false);
   const [mapReady, setMapReady] = useState(false);
   const [grade, setGrade] = useState(demo.max_difficulty);
@@ -122,16 +123,25 @@ export function RoutePreview({ samples, demo, matchSketch }: {
       bounds[1][1] = Math.max(bounds[1][1], lat);
     }
     const desktop = (mapSection.current?.clientWidth ?? 0) >= 900;
-    const mobileBottom = panelOpen ? Math.min(window.innerHeight * 0.49 + 45, (mapSection.current?.clientHeight ?? 700) - 200) : 110;
+    const mapBounds = mapSection.current?.getBoundingClientRect();
+    const playerBounds = mapSection.current?.querySelector('[aria-label="Terrain playback"]')?.getBoundingClientRect();
+    const mobileTop = Math.max(150, (playerBounds?.bottom ?? 0) - (mapBounds?.top ?? 0) + 16);
+    const mobileBottom = panelOpen ? Math.min(window.innerHeight * 0.49 + 45, (mapBounds?.height ?? 700) - mobileTop - 48) : 110;
     map.current?.fitBounds(bounds, {
-      padding: desktop ? { left: 420, right: 80, top: 100, bottom: 300 } : { left: 36, right: 36, top: 150, bottom: mobileBottom },
+      padding: desktop ? { left: 420, right: 80, top: 100, bottom: 300 } : { left: 36, right: 36, top: mobileTop, bottom: mobileBottom },
       maxZoom: 17, duration: 500,
     });
   }
 
+  function clearResult() {
+    setResult(null);
+    setPreviewTarget((target) => target === "match" ? "selection" : target);
+  }
+
   function updateSketch(points: Position[]) {
     setSketch(points);
-    setResult(null);
+    setPreviewTarget("selection");
+    clearResult();
     setError("");
   }
 
@@ -158,7 +168,7 @@ export function RoutePreview({ samples, demo, matchSketch }: {
     if (sketch.length < 2 || busy) return;
     setBusy(true);
     setDrawing(false);
-    setResult(null);
+    clearResult();
     setError("");
     try {
       const limits = {
@@ -188,6 +198,19 @@ export function RoutePreview({ samples, demo, matchSketch }: {
   }
 
   const suggestion = result?.suggestions[activeSuggestion];
+  const selectionName = mode === "pins" ? "Your two-point line" : "Your sketch";
+  const playbackLines = useMemo(() => {
+    if (previewTarget === "selection") return sketch.length >= 2 ? [sketch] : [];
+    if (previewTarget === "match") return suggestion ? [suggestion.route.coordinates] : [];
+    return sample.lines;
+  }, [previewTarget, sketch, suggestion, sample.lines]);
+  const playbackName = previewTarget === "selection" ? selectionName
+    : previewTarget === "match" ? suggestion?.name ?? "Mapped match" : sample.name;
+  const playbackKey = previewTarget === "selection" ? `${mode}:${JSON.stringify(sketch)}`
+    : previewTarget === "match" ? `match:${suggestion?.id}:${JSON.stringify(suggestion?.route.coordinates)}` : `source:${sample.id}`;
+  const previewNote = previewTarget === "selection"
+    ? mode === "pins" ? "Straight line between pins. This is not a mapped route." : "Playback follows your sketch. Travel conditions are unverified."
+    : previewTarget === "match" ? "Mapped section only. Gaps to your pins are not included." : "Source track preview. Playback stops at data gaps.";
   const original = result && "original_analysis" in result ? result.original_analysis : null;
   const forcedByWarning = result && (
     "forced_by_warning" in result ? result.forced_by_warning : original?.forced_by_warning
@@ -213,11 +236,12 @@ export function RoutePreview({ samples, demo, matchSketch }: {
         <div className={styles.location}><PreviewIcon name="pin" size={17} /><span>Little Cottonwood Canyon<span>Utah, United States</span></span></div>
         <div className={styles.sourcePicker}>
           <label htmlFor="source-sample">Source track</label>
-          <select id="source-sample" aria-label="Source sample" disabled={!mapReady} value={sample.id} onChange={(event) => {
+          <select id="source-sample" aria-label="Source sample" disabled={!mapReady || rideActive || busy} value={sample.id} onChange={(event) => {
             const selected = samples.find((item) => item.id === event.target.value);
             if (selected) {
               setSample(selected);
               updateSketch([]);
+              setPreviewTarget("source");
               setDrawing(false);
               setRideActive(false);
               frame(selected.lines.flat());
@@ -254,8 +278,8 @@ export function RoutePreview({ samples, demo, matchSketch }: {
           <NavigationControl position="top-right" showCompass={false} />
           <ScaleControl position="bottom-right" unit="metric" />
           <Source id="source-sample" type="geojson" data={sampleData}>
-            <Layer id="source-outline" type="line" paint={{ "line-color": "#172554", "line-width": 6, "line-opacity": suggestion ? 0.25 : 1 }} />
-            <Layer id="source-line" type="line" paint={{ "line-color": "#38bdf8", "line-width": 3.5, "line-opacity": suggestion ? 0.25 : 1 }} />
+            <Layer id="source-outline" type="line" paint={{ "line-color": "#172554", "line-width": 6, "line-opacity": previewTarget !== "source" && sketch.length > 0 ? 0.25 : 1 }} />
+            <Layer id="source-line" type="line" paint={{ "line-color": "#38bdf8", "line-width": 3.5, "line-opacity": previewTarget !== "source" && sketch.length > 0 ? 0.25 : 1 }} />
             <Layer id="source-points" type="circle" filter={["==", ["geometry-type"], "Point"]} paint={{
               "circle-color": "#38bdf8", "circle-radius": 4, "circle-stroke-color": "#172554", "circle-stroke-width": 2,
             }} />
@@ -266,7 +290,7 @@ export function RoutePreview({ samples, demo, matchSketch }: {
                 aria-label={index === 0 ? "Start pin" : "Destination pin"}>{index === 0 ? "A" : "B"}</span>
             </Marker>
           ))}
-          {mode === "sketch" && sketch.length > 0 && (
+          {(sketch.length >= 2 || (mode === "sketch" && sketch.length === 1)) && (
             <Source id="sketch" type="geojson" data={{
               type: "Feature",
               properties: {},
@@ -301,12 +325,12 @@ export function RoutePreview({ samples, demo, matchSketch }: {
               setTerrain(!terrain);
               map.current?.easeTo({ pitch: terrain ? 0 : 55, bearing: terrain ? 0 : -20, duration: 600 });
             }}><PreviewIcon name="layers" />{terrain ? "2D" : "3D"}</button>
-          <button type="button" disabled={!mapReady || rideActive} className={styles.mapButton} aria-label="Fit route on map"
-            onClick={() => frame(suggestion?.route.coordinates ?? sample.lines.flat())}><PreviewIcon name="focus" /></button>
+          <button type="button" disabled={!mapReady || rideActive || !playbackLines.length} className={styles.mapButton} aria-label="Fit route on map"
+            onClick={() => frame(playbackLines.flat())}><PreviewIcon name="focus" /></button>
         </div>
         <div className={styles.legend} aria-label="Map legend">
           <span><i className={styles.sourceSwatch} />Source track</span>
-          {sketch.length > 0 && <span><i className={styles.sketchSwatch} />{mode === "pins" ? "A: Start · B: Destination" : "Your sketch"}</span>}
+          {sketch.length > 0 && <span><i className={styles.sketchSwatch} />{selectionName}</span>}
           {!!original?.totals.flagged_stretch_count && <span><i className={styles.flagSwatch} />Flagged section</span>}
           {suggestion && <span><i className={styles.matchSwatch} />Mapped match</span>}
         </div>
@@ -316,9 +340,23 @@ export function RoutePreview({ samples, demo, matchSketch }: {
             ? sketch.length === 0 ? "Click the map to place your start." : "Click the map to place your destination."
             : "Click the map to add points to your sketch."}
         </div>}
-        <RouteRide key={suggestion?.id ?? sample.id} mapRef={map}
-          lines={suggestion ? [suggestion.route.coordinates] : sample.lines}
-          name={suggestion?.name ?? sample.name} ready={mapReady} onActiveChange={handleRideActive} />
+        <RouteRide key={playbackKey} mapRef={map} lines={playbackLines} name={playbackName} ready={mapReady && !busy}
+          previewTarget={previewTarget} previewNote={previewNote}
+          previewOptions={[
+            { value: "selection", label: selectionName },
+            ...(suggestion ? [{ value: "match" as const, label: "Mapped match" }] : []),
+            { value: "source", label: "Source track" },
+          ]}
+          emptyMessage={previewTarget === "selection"
+            ? sketch.length < 2 ? "Add at least two points to preview your selection." : "Move the points farther apart to preview this route."
+            : "Find a mapped match or choose your selection to preview."}
+          onPreviewChange={(target) => {
+            setPreviewTarget(target);
+            setDrawing(false);
+            const points = target === "selection" ? sketch : target === "match" ? suggestion?.route.coordinates ?? [] : sample.lines.flat();
+            frame(points);
+          }}
+          onActiveChange={handleRideActive} />
       </section>
       <aside className={`${styles.planner} ${plannerCollapsed ? styles.collapsed : ""}`} aria-label="Route planner">
         <header className={styles.plannerHeader}>
@@ -371,7 +409,7 @@ export function RoutePreview({ samples, demo, matchSketch }: {
               <label className={styles.field}><span>Ski level <span className={styles.fieldHint}>OSM difficulty limit</span></span>
                 <select aria-label="Maximum OSM difficulty" value={grade} onChange={(event) => {
                   setGrade(event.target.value as SuggestionsRequest["max_difficulty"]);
-                  setResult(null);
+                  clearResult();
                 }}>{GRADES.map((value) => <option key={value} value={value}>{value[0].toUpperCase() + value.slice(1)}</option>)}</select>
               </label>
               <details className={styles.details}>
@@ -379,16 +417,16 @@ export function RoutePreview({ samples, demo, matchSketch }: {
                 <div className={styles.filterGrid}>
                   <label className={styles.field}>Maximum distance (m)
                     <input type="number" min={1} max={100000} required value={distance || ""}
-                      onChange={(event) => { setDistance(Number(event.target.value)); setResult(null); }} />
+                      onChange={(event) => { setDistance(Number(event.target.value)); clearResult(); }} />
                   </label>
                   <label className={styles.field}>Maximum climb (ft)
                     <input type="number" min={0} max={30000} required value={climb}
-                      onChange={(event) => { setClimb(Number(event.target.value)); setResult(null); }} />
+                      onChange={(event) => { setClimb(Number(event.target.value)); clearResult(); }} />
                   </label>
                   <label className={`${styles.field} ${styles.fullWidth}`}>Flag slopes at or above
                     <select value={threshold} onChange={(event) => {
                       setThreshold(event.target.value as typeof threshold);
-                      setResult(null);
+                      clearResult();
                     }}><option value="considerable">Considerable</option><option value="moderate">Moderate</option><option value="low">Low</option></select>
                   </label>
                 </div>
@@ -417,10 +455,11 @@ export function RoutePreview({ samples, demo, matchSketch }: {
               <h2>{result.status === "found" ? "A line to explore." : "No mapped match."}</h2>
               <p>{result.message}</p>
               {result.suggestions.map((item, index) => (
-                <button key={item.id} type="button" disabled={rideActive} aria-pressed={index === activeSuggestion} className={styles.resultCard}
-                  onClick={() => { setActiveSuggestion(index); frame([...sketch, ...item.route.coordinates]); }}>
+                <button key={item.id} type="button" disabled={rideActive} aria-pressed={previewTarget === "match" && index === activeSuggestion} className={styles.resultCard}
+                  onClick={() => { setActiveSuggestion(index); setPreviewTarget("match"); frame([...sketch, ...item.route.coordinates]); }}>
                   <span><i className={styles.matchSwatch} />{item.name ?? "Unnamed section"}</span>
                   <span className={styles.resultStats}>{Math.round(item.analysis.totals.length_m)} m<span>·</span>{Math.round(item.analysis.totals.climb_ft)} ft climb<span>·</span>{item.difficulty}</span>
+                  <span className={styles.previewMatch}>Preview mapped match <PreviewIcon name="play" size={12} /></span>
                   {"comparison" in item && <span className={styles.resultStats}>{Math.round(item.comparison.max_deviation_m)} m from sketch</span>}
                 </button>
               ))}

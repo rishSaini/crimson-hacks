@@ -141,6 +141,10 @@
 .ride h2 { font: 23px/1.3 Georgia, serif; letter-spacing: -.4px; margin: 7px 0 10px; }
 .sectionPicker { display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: var(--muted); margin: 5px 0 12px; gap: 7px; }
 .sectionPicker select { max-width: 58%; border: 1px solid var(--line); border-radius: 5px; padding: 4px 6px; background: var(--paper); color: var(--ink); font-size: 10px; }
+.previewPicker { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 10px; margin: 8px 0; }
+.previewPicker select { min-width: 0; max-width: 65%; color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; font-size: 11px; }
+.previewNote { color: var(--amber); font-size: 10px; line-height: 1.5; margin: 6px 0 12px; }
+.previewMatch { display: flex; align-items: center; gap: 5px; color: var(--forest); font-size: 10px; margin-top: 2px; }
 .transport { display: flex; align-items: center; gap: 8px; }
 .playButton { display: flex; align-items: center; justify-content: center; gap: 6px; background: var(--forest); color: white; border-radius: 7px; padding: 9px 14px; min-width: 90px; font-size: 11px !important; font-weight: 550 !important; }
 .playButton:hover { background: var(--forest-hover); }
@@ -215,11 +219,15 @@
   .ride h2 { font-size: 19px; margin: 4px 0 8px; }
   .rideHeading .eyebrow { font-size: 8px; }
   .rideStatus { font-size: 8px; }
+  .ride[data-active=true] { top: auto; bottom: 124px; }
   .ride[data-active=false] { min-height: 104px; padding-right: 106px; }
   .ride[data-active=false] .rideHeading { display: block; }
   .ride[data-active=false] .rideHeading .eyebrow { display: none; }
   .ride[data-active=false] h2 { font-size: 18px; line-height: 1.15; margin: 3px 0 7px; }
   .ride[data-active=false] .transport { position: absolute; top: 37px; right: 13px; }
+  .ride[data-active=false] .previewPicker { font-size: 0; margin-top: 5px; margin-bottom: 5px; }
+  .ride[data-active=false] .previewPicker select { max-width: 100%; width: 100%; font-size: 10px; padding: 4px; }
+  .ride[data-active=false] .previewNote { margin: 5px -91px 5px 0; font-size: 9px; }
   .ride[data-active=false] .transport .rideButton, .ride[data-active=false] .speedControls { display: none; }
   .ride[data-active=false] .sectionPicker { font-size: 0; margin-bottom: 0; }
   .ride[data-active=false] .sectionPicker select { max-width: 100%; width: 100%; }

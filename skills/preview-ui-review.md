@@ -41,3 +41,18 @@ The UI labels the saved forecast date as 2026-01-15.
 Matches represent mapped sections, which can have endpoint gaps.
 Terrain playback uses an elevation model and imagery. Snow cover and obstacles remain unverified.
 Playback follows each continuous section separately.
+
+
+## Selection playback correction
+
+The player now follows the selected two-point line or the full sketch.
+A search does not replace the selected preview with an unrelated source track.
+The preview selector also offers the source track and any mapped match.
+The player labels two-point lines as unmapped geometry.
+Changing the route stops playback and resets its progress.
+Empty selections and duplicate points disable playback.
+
+Browser checks covered selected pins, sketch vertices, no matches, and mapped matches.
+Checks also covered route switching, editing, seeking, and mobile layout.
+The reference two-point example measures 1,877 m. The full sketch measures 2,228 m.
+These checks verify the selected geometry, rather than the original 6,739 m source section.

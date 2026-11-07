@@ -6,6 +6,8 @@ import type { MapRef } from "react-map-gl/maplibre";
 import { PreviewIcon } from "@/components/PreviewIcon";
 import styles from "./RoutePreview.module.css";
 
+export type PreviewTarget = "selection" | "match" | "source";
+
 type Position = [number, number];
 type Path = { points: Position[]; distances: number[]; length: number };
 
@@ -42,11 +44,17 @@ function formatTime(seconds: number): string {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 
-export function RouteRide({ mapRef, lines, name, ready, onActiveChange }: {
+export function RouteRide({ mapRef, lines, name, ready, previewTarget, previewOptions, previewNote, emptyMessage,
+  onPreviewChange, onActiveChange }: {
   mapRef: RefObject<MapRef | null>;
   lines: Position[][];
   name: string;
   ready: boolean;
+  previewTarget: PreviewTarget;
+  previewOptions: { value: PreviewTarget; label: string }[];
+  previewNote: string;
+  emptyMessage: string;
+  onPreviewChange: (target: PreviewTarget) => void;
   onActiveChange?: (active: boolean) => void;
 }) {
   const paths = useMemo(() => lines.filter((line) => line.length >= 2).map(buildPath).filter((path) => path.length > 1), [lines]);
@@ -232,17 +240,24 @@ export function RouteRide({ mapRef, lines, name, ready, onActiveChange }: {
     void play(false);
   }
 
-  if (!path) return null;
-  const totalSeconds = Math.ceil(path.length / BASE_SPEED_MPS);
-  const elapsedSeconds = progress >= path.length ? totalSeconds : progress / BASE_SPEED_MPS;
-  const startLabel = progress >= path.length ? "Replay" : progress > 0 ? "Resume" : "Start";
+  const length = path?.length ?? 0;
+  const totalSeconds = Math.ceil(length / BASE_SPEED_MPS);
+  const elapsedSeconds = progress >= length ? totalSeconds : progress / BASE_SPEED_MPS;
+  const startLabel = length > 0 && progress >= length ? "Replay" : progress > 0 ? "Resume" : "Start";
   return (
-    <section className={styles.ride} data-active={active} aria-label="Terrain playback">
+    <section className={styles.ride} data-active={active} data-preview-target={previewTarget} aria-label="Terrain playback">
       <div className={styles.rideHeading}>
         <p className={styles.eyebrow}><PreviewIcon name="mountain" size={16} />Route preview</p>
         <span className={styles.rideStatus}>{preparing ? "Loading terrain" : playing ? "Playing" : active ? "Paused" : "Terrain simulation"}</span>
       </div>
       <h2>{name}</h2>
+      <label className={styles.previewPicker}>Preview route
+        <select value={previewTarget} onChange={(event) => {
+          stop();
+          onPreviewChange(event.target.value as PreviewTarget);
+        }}>{previewOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
+      </label>
+      <p className={styles.previewNote}>{path ? previewNote : emptyMessage}</p>
       {paths.length > 1 && <label className={styles.sectionPicker}>Continuous section
         <select value={section} disabled={preparing} onChange={(event) => {
           exit();
@@ -256,7 +271,7 @@ export function RouteRide({ mapRef, lines, name, ready, onActiveChange }: {
       <div className={styles.transport}>
         {playing || preparing
           ? <button type="button" onClick={pause} className={styles.playButton}><PreviewIcon name="pause" size={17} />Pause</button>
-          : <button type="button" disabled={!ready} onClick={() => void play()} className={styles.playButton}>
+          : <button type="button" disabled={!ready || !path} onClick={() => void play()} className={styles.playButton}>
             <PreviewIcon name="play" size={17} />{startLabel}</button>}
         <button type="button" disabled={!active && !preparing && progress === 0} onClick={stop} className={styles.rideButton}>
           <PreviewIcon name="stop" size={14} />Stop</button>
@@ -270,14 +285,14 @@ export function RouteRide({ mapRef, lines, name, ready, onActiveChange }: {
           <button type="button" aria-label="Faster" disabled={speed >= 10} onClick={() => changeSpeed(speed + 1)}><PreviewIcon name="plus" size={14} /></button>
         </div>
       </div>
-      <div className={styles.playbackDetails}>
+      <div className={styles.playbackDetails} hidden={!path}>
         <div className={styles.timeline}>
-          <input aria-label="POV progress" type="range" min={0} max={path.length} step="any" value={progress} disabled={!ready}
+          <input aria-label="POV progress" type="range" min={0} max={length} step="any" value={progress} disabled={!ready || !path}
             aria-valuetext={`${formatTime(elapsedSeconds)}, ${Math.round(progress)} meters`}
-            style={{ "--progress": `${progress / path.length * 100}%` } as CSSProperties}
+            style={{ "--progress": `${length > 0 ? progress / length * 100 : 0}%` } as CSSProperties}
             onChange={(event) => seek(Number(event.target.value))} />
           <div><span>{formatTime(elapsedSeconds)} <span>/ {formatTime(totalSeconds)}</span></span>
-            <span>{Math.round(progress).toLocaleString()} / {Math.round(path.length).toLocaleString()} m</span></div>
+            <span>{Math.round(progress).toLocaleString()} / {Math.round(length).toLocaleString()} m</span></div>
         </div>
         <div className={styles.rideFooter}>
           <span>Simulated time · 1× = 8 m/s</span>
@@ -296,7 +311,7 @@ export function RouteRide({ mapRef, lines, name, ready, onActiveChange }: {
             seek(seconds * BASE_SPEED_MPS);
           }}>
             <label>Jump to time<input value={jumpTime} onChange={(event) => setJumpTime(event.target.value)} placeholder="m:ss" /></label>
-            <button type="submit" disabled={!ready} className={styles.rideButton}>Go to time <PreviewIcon name="arrow" size={14} /></button>
+            <button type="submit" disabled={!ready || !path} className={styles.rideButton}>Go to time <PreviewIcon name="arrow" size={14} /></button>
           </form>
         </details>
       </div>
