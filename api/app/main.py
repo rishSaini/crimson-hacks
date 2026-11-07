@@ -1,5 +1,6 @@
 """RedRun API."""
 
+import json
 import os
 from datetime import date as Date
 from pathlib import Path
@@ -46,7 +47,16 @@ app.add_middleware(
 
 @app.get("/forecast")
 def get_forecast(zone: str = "salt-lake", date: Date | None = None) -> ForecastResponse:
-    return load_fixture("forecast.response.json", ForecastResponse)
+    """Replay a saved demo day, or the sample forecast. Live UAC data needs an API token."""
+    if date is not None:
+        demo_days = json.loads((FIXTURES_DIR / "demo_days.json").read_text())
+        if date.isoformat() in demo_days:
+            return ForecastResponse.model_validate(demo_days[date.isoformat()])
+    forecast = load_fixture("forecast.response.json", ForecastResponse)
+    # Never hand back another day's forecast under the requested date.
+    if date is not None and forecast.date != date:
+        raise HTTPException(404, "No forecast is available for the requested date.")
+    return forecast
 
 
 @app.post("/analyze")

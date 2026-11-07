@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 from pydantic import ValidationError
 
 from app.main import FIXTURES_DIR, app
+from app.route_analysis import merge_runs
 from app.models import (
     AlternativeRequest,
     AlternativeResponse,
@@ -298,7 +299,19 @@ def test_analyze_fixture_totals_match_segments(name):
     assert all(segment["slope_max_deg"] >= 30 for segment in steep)
     assert totals["length_m"] == sum(segment["length_m"] for segment in segments)
     assert totals["flagged_length_m"] == sum(segment["length_m"] for segment in flagged)
-    assert totals["flagged_stretch_count"] == len(flagged)
+    merged = merge_runs(
+        [SegmentProperties.model_validate(segment) for segment in segments], lambda s: s.flagged
+    )
+    assert totals["flagged_stretch_count"] == len(merged)
+    assert [stretch["segment_ids"] for stretch in body["flagged_stretches"]] == [
+        [segment.id for segment in group] for group in merged
+    ]
+    assert totals["steep_stretch_count"] == len(
+        merge_runs(
+            [SegmentProperties.model_validate(segment) for segment in segments],
+            lambda s: s.color != "gray",
+        )
+    )
     assert [segment["id"] for segment in segments] == list(range(1, len(segments) + 1))
 
 
@@ -312,7 +325,7 @@ def test_briefing_fixture_only_cites_segments_it_was_given():
 
 
 # Fields that hold UAC's words verbatim. Everything else is RedRun's own text.
-UAC_QUOTED_KEYS = {"bottom_line", "problems", "alert"}
+UAC_QUOTED_KEYS = {"bottom_line", "comparison_advice", "problems", "alert"}
 REPO_ROOT = FIXTURES_DIR.parent
 
 
@@ -410,6 +423,20 @@ def test_alert_none_carries_no_details():
 def test_alert_needs_all_details(level):
     with pytest.raises(ValidationError):
         ForecastAlert(level=level, what="Something")
+
+
+def test_special_bulletin_does_not_need_what_to_do():
+    details = {
+        "what": "Something",
+        "where": "Somewhere",
+        "valid_from": "2026-02-20T06:00:00-07:00",
+        "valid_to": "2026-02-23T06:00:00-07:00",
+    }
+    assert ForecastAlert(level="special_bulletin", **details).what_to_do is None
+    with pytest.raises(ValidationError):
+        ForecastAlert(level="warning", **details)
+    with pytest.raises(ValidationError):
+        ForecastAlert(level="watch", **details)
 
 
 def test_forecast_requires_an_alert():

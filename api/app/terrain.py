@@ -68,6 +68,16 @@ def rose_index(band: int, octant: int) -> int:
     return 8 * band + octant
 
 
+def worst_rating(values: list[int]) -> int:
+    """The raw value to apply when several rose values could rate one point.
+
+    Raw values sort by rating. If any is unrated (0), Considerable or higher (5 and up)
+    still wins, but Low or Moderate gives way to unrated, which is always flagged.
+    """
+    highest = max(values)
+    return 0 if 0 in values and highest < 5 else highest
+
+
 def rose_value(rose: list[int], elevation_ft: float, octant: int) -> int:
     """Raw rose value at a point, taking the higher rating of its candidate bands.
 
@@ -80,9 +90,7 @@ def rose_value(rose: list[int], elevation_ft: float, octant: int) -> int:
 
     Use this for every rating lookup, including the cost grid and overhead exposure.
     """
-    values = [rose[rose_index(band, octant)] for band in candidate_bands(elevation_ft)]
-    highest = max(values)
-    return 0 if 0 in values and highest < 5 else highest
+    return worst_rating([rose[rose_index(band, octant)] for band in candidate_bands(elevation_ft)])
 
 
 def is_reroute_target(value: int, avoid_at_or_above: str) -> bool:

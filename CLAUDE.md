@@ -10,7 +10,7 @@ Target user: a Salt Lake skier or splitboarder new to touring in Big Cottonwood,
 
 **The UI never calls a route, segment or slope "safe".** This covers RedRun's own UI copy, fixtures, LLM output and pitch material. The models and tests reject "safe", "safer", "safest" and "safely" in these.
 
-**The one exception is UAC's own text.** `bottom_line`, `problems` and `alert` hold it verbatim, including words like "safer". Never trim or reword it, and always show it in a block attributed to UAC with a link to the full forecast. LLM output still can't use the word, even when quoting UAC.
+**The one exception is UAC's own text.** `bottom_line`, `comparison_advice`, `problems` and `alert` hold it verbatim, including words like "safer". Never trim or reword it, and always show it in a block attributed to UAC with a link to the full forecast. LLM output still can't use the word, even when quoting UAC.
 
 - Under 30 degrees is "no avalanche-terrain flag", never "safe" or "clear".
 - A reroute "avoids terrain flagged by today's forecast", never "has no avalanche risk".
@@ -83,14 +83,18 @@ There are two levels:
 
 Settings exposes `moderate` as "Also avoid Moderate" and `low` as "Beginner mode: stay off and out from under slopes 30° and steeper", with the subtitle "Checks slopes on your route and within 300 m uphill."
 
-Overhead exposure: a gray point is flagged if uphill cells within 300 m are 30 degrees or steeper and rated at or above `avoid_at_or_above`, or unrated. More "no clean line" results at `low` are expected, and the fallback options handle them.
+A point's slope is the steepest cell in its 3 by 3 window, and its rating is the worst among the 30 degree or steeper cells in that window, so a point on a ridge can't take the milder side's rating. Unrated follows the same rule as band ties.
+
+Overhead exposure: a gray point is flagged by a cell within 300 m that is 30 degrees or steeper, rated at or above `avoid_at_or_above` or unrated, higher than the point, and facing it: the bearing from the cell to the point is within 60 degrees of the cell's aspect. More "no clean line" results at `low` are expected, and the fallback options handle them.
+
+Every flagged run stays in `segments`, however short. For the banner and pins, runs less than 50 m apart along the route merge into one entry in `flagged_stretches`, and `flagged_stretch_count` counts those.
 
 What the route shows depends on these totals:
 
 | Route | Banner | Button |
 | --- | --- | --- |
 | `flagged_stretch_count` above 0 | Flagged stretches | Primary filled "Reroute" |
-| Nothing flagged, `steep_segment_count` above 0 | "N stretches in avalanche terrain, rated Low today (X m). Not rerouted by default." The rating names what's in `steep_ratings`: "Low", "Moderate" or "Low to Moderate" | Secondary outline "Avoid these too", which reruns the analysis and reroute at the lowest rating present (`steep_ratings[0]`) |
+| Nothing flagged, `steep_segment_count` above 0 | "N stretches in avalanche terrain, rated Low today (X m), with N from `steep_stretch_count`. Not rerouted by default." The rating names what's in `steep_ratings`: "Low", "Moderate" or "Low to Moderate" | Secondary outline "Avoid these too", which reruns the analysis and reroute at the lowest rating present (`steep_ratings[0]`) |
 | Both 0 | Gray "No flags found on this route today." | None |
 
 The primary Reroute button shows if and only if `flagged_stretch_count` is above 0.
@@ -99,7 +103,7 @@ The primary Reroute button shows if and only if `flagged_stretch_count` is above
 
 ### Alerts
 
-`ForecastResponse.alert` has a `level` (`none`, `watch`, `warning` or `special_bulletin`) and `what`, `where`, `what_to_do`, `valid_from` and `valid_to`. Any level but `none` shows as a full-width banner above everything.
+`ForecastResponse.alert` has a `level` (`none`, `watch`, `warning` or `special_bulletin`) and `what`, `where`, `impacts`, `what_to_do`, `valid_from` and `valid_to`. Special bulletins have no "What to do" section, so `what_to_do` can be null there, and we never write one for UAC. Any level but `none` shows as a full-width banner above everything.
 
 On a forecast day with a `warning`:
 
@@ -107,6 +111,8 @@ On a forecast day with a `warning`:
 - The banner explains why everything steep is flagged.
 - The comparison card adds: "UAC recommends avoiding all avalanche terrain today."
 - Nothing may imply that a rerouted line makes going out okay.
+
+A forecast day can also set `comparison_advice`, UAC's own words quoted from its bottom line. The comparison card shows it, attributed to UAC, on any day that has it. Feb 21, 2026 uses this: it isn't a Warning, so nothing is forced, but UAC still says to stay off and out from under slopes steeper than 30 degrees.
 
 If `ratings_issued` is false (all 24 rose values are 0), show the banner "No danger ratings issued today. Steep terrain is shown as unrated."
 

@@ -17,9 +17,9 @@ Owns `web/`. Works against the fixture stubs until the real endpoints land.
 
 - [ ] Slope-shading overlay with a toggle: yellow 27 to 29, orange 30 to 34, red 35 to 45, purple above 45 (PNG from terrain, added as an `image` source)
 - [ ] Forecast card: rating, bottom line, and the danger rose drawn as an SVG
-- [ ] Date picker to load a past day
+- [ ] Date picker to load a past day: `2026-02-21` (main demo) and `2026-02-18` (Warning example), since other dates return 404 for now
 - [ ] Show `source` on the card, so fixture and replayed days can't pass for today's forecast
-- [ ] If `alert.level` isn't `none`, show a full-width banner above everything, with `what`, `where`, `what_to_do` and the valid times (`demo_days.json`)
+- [ ] If `alert.level` isn't `none`, show a full-width banner above everything, with `what`, `where`, `impacts`, `what_to_do` if there is one, and the valid times (`demo_days.json`). Special bulletins have no `what_to_do`, so don't leave an empty label
 - [ ] If `forced_by_warning` is true, the banner explains why everything steep is flagged, for example: "All slopes 30° and steeper are flagged for this forecast day, whatever your setting." Show the setting as overridden, and never save the forced value
 - [ ] Show `bottom_line`, `problems` and `alert` text verbatim, in a block attributed to the Utah Avalanche Center with a link to `forecast_url`. Never trim or reword it
 - [ ] If `ratings_issued` is false, show the banner "No danger ratings issued today. Steep terrain is shown as unrated." (`forecast.no_ratings.response.json`)
@@ -31,18 +31,19 @@ Owns `web/`. Works against the fixture stubs until the real endpoints land.
 ## Hour 12 to 18: stretch, in this order
 
 - [ ] Overhead exposure markers
-- [ ] Flagged state: thicker line, one pulse, numbered pins, sticky banner, camera frames the route
+- [ ] Flagged state: thicker line, one pulse, numbered pins from `flagged_stretches` (one pin per entry, at `pin`), sticky banner counting `flagged_stretch_count`, camera frames the route. Draw every segment's color, since one stretch can span several runs and gaps
 - [ ] Banner copy must name the ratings actually flagged, which depend on the setting, and must not describe unrated meters as "rated Considerable": word mixed routes separately (`analyze.unrated.response.json`)
 - [ ] Reroute button at the bottom center of the map and the top of the side panel, the only filled button on screen, shown only if `flagged_stretch_count` is above 0. Start no later than hour 12: it's the demo's closing moment
 - [ ] Settings control for `avoid_at_or_above`, sent with every `POST /analyze` and `POST /alternative` call: default `considerable`, "Also avoid Moderate" for `moderate`, and "Beginner mode: stay off and out from under slopes 30° and steeper" for `low`, with the subtitle "Checks slopes on your route and within 300 m uphill." Changing it re-analyzes the route. The chosen rating counts in the comparison
 - [ ] No Beginner mode exception: read `flagged` from the server, and show the primary Reroute button if and only if flagged is above 0
 - [ ] Always show the meters a reroute leaves behind (`alternative_flagged_m`): a stricter setting doesn't guarantee a line that avoids everything (`alternative.avoid_low.response.json`)
 - [ ] Nothing to list: gray "No flags found on this route today." only if `steep_segment_count` is 0 and nothing is overhead-exposed
-- [ ] Only Low or Moderate steep segments (`analyze.low_only`, `analyze.moderate_only` and `analyze.low_moderate` fixtures): banner "N stretches in avalanche terrain, rated Low today (X m). Not rerouted by default.", with N from `steep_segment_count`, X from `steep_length_m`, the rating from `steep_ratings` ("Low", "Moderate" or "Low to Moderate"), and the listed segments below it
+- [ ] Only Low or Moderate steep segments (`analyze.low_only`, `analyze.moderate_only` and `analyze.low_moderate` fixtures): banner "N stretches in avalanche terrain, rated Low today (X m). Not rerouted by default.", with N from `steep_stretch_count`, X from `steep_length_m`, the rating from `steep_ratings` ("Low", "Moderate" or "Low to Moderate"), and the listed segments below it
 - [ ] In that state, a secondary outline button "Avoid these too" that reruns the analysis and the reroute with `avoid_at_or_above` set to `steep_ratings[0]`, with no primary button. It shows on Low-only routes too. It applies to the current route only and never changes the saved setting
 - [ ] After an "Avoid these too" reroute, show a text link "Make this my default" on the comparison card. It updates the saved setting only when tapped
 - [ ] Rerouted state: original becomes a dashed gray ghost whatever its colors were, new line solid, comparison card, "Use this route" and "Undo"
 - [ ] On Warning days, the comparison card adds: "UAC recommends avoiding all avalanche terrain today." No copy may imply the rerouted line makes going out okay, and "Make this my default" doesn't show (`analyze.warning` and `alternative.warning` fixtures)
+- [ ] If the forecast has `comparison_advice`, show it on the comparison card, attributed to UAC. `2026-02-21` has it
 - [ ] Corridor slider, 200 to 800 m
 - [ ] No-line state (`alternative.no_line.response.json`): one plain sentence and the three one-tap choices, plus the "Show lowest-exposure line anyway" link with its red label
 - [ ] Agent prompt box and streamed route cards; label generated lines "Computer-generated line, not a known skin track. Check it against a map."

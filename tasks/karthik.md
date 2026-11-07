@@ -44,11 +44,9 @@ Read "Core logic" in `CLAUDE.md` first. Some of its rules are stricter than the 
 
 ## Follow-ups from the review of your first terrain pass
 
-These are from merging `karthik/nearby-route-suggestions`, and Rishabh has the rulings on the first three.
+These are from merging `karthik/nearby-route-suggestions`.
 
-- **Ridgeline under-rating:** `sample` rates only the aspect of the steepest cell in the 3 by 3 window. A point on a 31 degree High-rated north face next to a 33 degree Moderate-rated south face comes out Moderate and unflagged. On Feb 18's rose, about 6% of steep points rate below their worst steep neighbor, and about 3% would lose a flag at the default setting.
-- **Short runs:** flagged runs under 30 m are kept. The demo route splits into 27 segments and 18 flagged stretches, 10 of them under 30 m, so the banner count is noisy.
-- **Overhead reach:** any higher steep cell within 300 m counts, in any direction. That flags 1,916 m of the 2,227 m demo route by default, and all of it on Feb 18, so a reroute may have little room.
+- **Please review `terrain-review-rulings`.** It changes your terrain code in three ways that Rishabh ruled on. A point now takes the worst rating among steep cells in its 3 by 3 window, instead of the steepest cell's. Overhead cells must also face the point, within 60 degrees. Flagged runs are all kept, and runs under 50 m apart merge for the banner and pins.
 - **Startup:** `load_grids` runs on the first request, not at server start. Load it at startup so the first request on stage isn't the slow one.
 - **Gray segments:** unflagged gray segments return `danger: no_rating`, which reads like unrated terrain. Return the forecast's rating there, or make sure the UI never shows it.
 - **Spot check:** still compare 3 known slopes against a published slope-angle map.

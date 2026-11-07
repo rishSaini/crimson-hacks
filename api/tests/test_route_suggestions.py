@@ -134,6 +134,7 @@ def test_low_threshold_excludes_steep_low_rated_sections(grids, forecast):
 def test_overhead_uses_threshold_and_unrated_terrain(threshold, raw, flagged, grids):
     grids.elevation[95, 100] += 20
     grids.slope[95, 100] = 35
+    grids.aspect[95, 100] = 180
     sample = grids.sample(431005, 4498995, [raw] * 24, threshold)
     assert sample.level is None
     assert (sample.overhead_level is not None) == flagged

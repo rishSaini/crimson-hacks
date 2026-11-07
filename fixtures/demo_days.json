@@ -8,6 +8,7 @@
       "level": "warning",
       "what": "The avalanche danger for the warning area is rising to HIGH today.",
       "where": "The mountains of Northern, Central, and Southwestern Utah, as well as Southeastern Idaho.",
+      "impacts": "Recent heavy snow combined with strong wind is creating widespread areas of unstable snow. Both human-triggered and natural avalanches are likely. Avalanches will increase in size and likelihood throughout the day.",
       "what_to_do": "Avoid all avalanche terrain. Stay off of and out from under slopes steeper than 30°. Carry and know how to use avalanche rescue equipment. Find safer riding conditions on slopes less than 30° with no overhead hazard",
       "valid_from": "2026-02-18T06:00:00-07:00",
       "valid_to": "2026-02-19T06:00:00-07:00"
@@ -222,6 +223,230 @@
       }
     ],
     "bottom_line": "Avalanche danger will rise to HIGH on mid- and upper-elevation slopes facing E-N-NW. It is possible to trigger avalanches more than 3 feet deep on a buried persistent weak layer (PWL) on mid- and upper-elevation slopes facing W-N-E. These slides can break hundreds of feet wide, and can be triggered from a distance. The continuing storm will create wind slabs and new snow avalanches.\n\nThe recommendation for today is simple: as we approach HIGH danger, avoid all avalanche terrain.\n\nStick to slopes less than 30 degrees.\nStay well away from slopes connected to or below anything steeper than 30 degrees.\nBe aware of who is above and below you.",
+    "comparison_advice": null,
     "forecast_url": "https://utahavalanchecenter.org/forecast/salt-lake/2/18/2026"
+  },
+  "2026-02-21": {
+    "zone": "salt-lake",
+    "date": "2026-02-21",
+    "source": "demo_replay",
+    "overall_danger": "considerable",
+    "alert": {
+      "level": "special_bulletin",
+      "what": "The Utah Avalanche Center is warning of dangerous avalanche conditions across all Utah mountains this weekend. This week’s heavy snowfall and strong winds overloaded preexisting weak layers, creating a HIGH avalanche danger across the entire state. With improving weather moving in for the weekend, avalanche accidents are likely in the backcountry. There have already been two tragic avalanche fatalities this week, as well as several close calls and numerous backcountry avalanches reported.",
+      "where": "The mountains of Utah and southeastern Idaho.",
+      "impacts": "Dangerous avalanche conditions exist in the backcountry and will persist through the weekend. Natural avalanches are possible, and people are likely to trigger avalanches on slopes steeper than 30 degrees. Dangerous and deadly avalanches can be triggered remotely (from a distance or from below). People leaving ski area boundaries are entering the backcountry where the same dangerous avalanche conditions exist.",
+      "what_to_do": null,
+      "valid_from": "2026-02-20T06:00:00-07:00",
+      "valid_to": "2026-02-23T06:00:00-07:00"
+    },
+    "ratings_issued": true,
+    "rose": [
+      {
+        "index": 0,
+        "band": "upper",
+        "aspect": "N",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 1,
+        "band": "upper",
+        "aspect": "NE",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 2,
+        "band": "upper",
+        "aspect": "E",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 3,
+        "band": "upper",
+        "aspect": "SE",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 4,
+        "band": "upper",
+        "aspect": "S",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 5,
+        "band": "upper",
+        "aspect": "SW",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 6,
+        "band": "upper",
+        "aspect": "W",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 7,
+        "band": "upper",
+        "aspect": "NW",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 8,
+        "band": "mid",
+        "aspect": "N",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 9,
+        "band": "mid",
+        "aspect": "NE",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 10,
+        "band": "mid",
+        "aspect": "E",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 11,
+        "band": "mid",
+        "aspect": "SE",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 12,
+        "band": "mid",
+        "aspect": "S",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 13,
+        "band": "mid",
+        "aspect": "SW",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 14,
+        "band": "mid",
+        "aspect": "W",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 15,
+        "band": "mid",
+        "aspect": "NW",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 16,
+        "band": "lower",
+        "aspect": "N",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 17,
+        "band": "lower",
+        "aspect": "NE",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 18,
+        "band": "lower",
+        "aspect": "E",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 19,
+        "band": "lower",
+        "aspect": "SE",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 20,
+        "band": "lower",
+        "aspect": "S",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 21,
+        "band": "lower",
+        "aspect": "SW",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 22,
+        "band": "lower",
+        "aspect": "W",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 23,
+        "band": "lower",
+        "aspect": "NW",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      }
+    ],
+    "problems": [
+      {
+        "name": "Persistent Weak Layer",
+        "description": "On slopes facing the shady half of the compass, it will be likely to trigger large, destructive slab avalanches failing on weak, faceted snow buried 2–4 feet deep. These avalanches could break hundreds of feet wide and propagate well beyond where you trigger them.\n\nDo not let existing tracks give you confidence. Persistent weak layers can allow multiple riders on a slope before one person hits the wrong spot. These are high-consequence bone-breaking avalanches — the kind that catch, carry, and kill humans.\n\nMy advice: Live to ride another day and let our snowpack settle out."
+      },
+      {
+        "name": "Wind Drifted Snow",
+        "description": "Winds have been moderate to strong over the past few days. With nearly 50 inches of new snow available for transport, those winds have built fresh slabs of wind-drifted snow on upper- and mid-elevation slopes.\n\nWhile this problem is likely stabilizing fairly quickly, fresh drifts can still be sensitive—especially in steep, exposed terrain. Approach avalanche terrain with caution, and watch for smooth, rounded pillows, cornices, and cracking around your skis, board, or sled."
+      }
+    ],
+    "bottom_line": "The avalanche danger is CONSIDERABLE, and today is NOT the day to be in steep avalanche terrain. That means staying off of — and out from under — slopes steeper than 30 degrees. Large, destructive, and potentially deadly slab avalanches are likely.\n\nBlue skies and fresh powder can make it feel like a perfect day, but when those line up with dangerous avalanche conditions and busy backcountry traffic, that’s often when we see serious accidents.\n\nChoose low-angle terrain. Spread out. Speak up within your group. Let’s work together to make sure everyone comes home.",
+    "comparison_advice": "The avalanche danger is CONSIDERABLE, and today is NOT the day to be in steep avalanche terrain. That means staying off of — and out from under — slopes steeper than 30 degrees.",
+    "forecast_url": "https://utahavalanchecenter.org/forecast/salt-lake/2/21/2026"
   }
 }

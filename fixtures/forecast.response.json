@@ -214,8 +214,10 @@
     "level": "none",
     "what": null,
     "where": null,
+    "impacts": null,
     "what_to_do": null,
     "valid_from": null,
     "valid_to": null
-  }
+  },
+  "comparison_advice": null
 }

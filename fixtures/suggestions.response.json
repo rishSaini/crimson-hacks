@@ -315,93 +315,11 @@
               [
                 -111.64019413039446,
                 40.58508826293753
-              ]
-            ]
-          },
-          "properties": {
-            "id": 5,
-            "length_m": 118.99328868647041,
-            "slope_min_deg": 31.71912956237793,
-            "slope_max_deg": 47.47359848022461,
-            "elevation_min_ft": 8668.3837890625,
-            "elevation_max_ft": 8861.521484375,
-            "aspects": [
-              "N",
-              "NE"
-            ],
-            "danger": "considerable",
-            "color": "orange",
-            "flagged": true,
-            "flag_reason": "steep_terrain"
-          }
-        },
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "LineString",
-            "coordinates": [
-              [
-                -111.64019413039446,
-                40.58508826293753
               ],
               [
                 -111.64025445409077,
                 40.584962407871615
-              ]
-            ]
-          },
-          "properties": {
-            "id": 6,
-            "length_m": 14.874161085684468,
-            "slope_min_deg": 34.547325134277344,
-            "slope_max_deg": 34.547325134277344,
-            "elevation_min_ft": 8890.4384765625,
-            "elevation_max_ft": 8890.4384765625,
-            "aspects": [
-              "NW"
-            ],
-            "danger": "moderate",
-            "color": "yellow",
-            "flagged": false,
-            "flag_reason": null
-          }
-        },
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "LineString",
-            "coordinates": [
-              [
-                -111.64025445409077,
-                40.584962407871615
               ],
-              [
-                -111.64031477756359,
-                40.58483655277316
-              ]
-            ]
-          },
-          "properties": {
-            "id": 7,
-            "length_m": 14.874161085704843,
-            "slope_min_deg": 33.7781867980957,
-            "slope_max_deg": 33.7781867980957,
-            "elevation_min_ft": 8910.9345703125,
-            "elevation_max_ft": 8910.9345703125,
-            "aspects": [
-              "NE"
-            ],
-            "danger": "considerable",
-            "color": "orange",
-            "flagged": true,
-            "flag_reason": "steep_terrain"
-          }
-        },
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "LineString",
-            "coordinates": [
               [
                 -111.64031477756359,
                 40.58483655277316
@@ -417,33 +335,6 @@
               [
                 -111.64049574664108,
                 40.58445898728268
-              ]
-            ]
-          },
-          "properties": {
-            "id": 8,
-            "length_m": 44.62248325709415,
-            "slope_min_deg": 41.345951080322266,
-            "slope_max_deg": 47.02449417114258,
-            "elevation_min_ft": 8933.5224609375,
-            "elevation_max_ft": 8974.6474609375,
-            "aspects": [
-              "NW"
-            ],
-            "danger": "moderate",
-            "color": "yellow",
-            "flagged": false,
-            "flag_reason": null
-          }
-        },
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "LineString",
-            "coordinates": [
-              [
-                -111.64049574664108,
-                40.58445898728268
               ],
               [
                 -111.64055606921993,
@@ -452,14 +343,15 @@
             ]
           },
           "properties": {
-            "id": 9,
-            "length_m": 14.874161085704843,
+            "id": 5,
+            "length_m": 208.23825520065878,
             "slope_min_deg": 31.114248275756836,
-            "slope_max_deg": 31.114248275756836,
-            "elevation_min_ft": 9011.33984375,
+            "slope_max_deg": 47.47359848022461,
+            "elevation_min_ft": 8668.3837890625,
             "elevation_max_ft": 9011.33984375,
             "aspects": [
-              "N"
+              "N",
+              "NE"
             ],
             "danger": "considerable",
             "color": "orange",
@@ -503,7 +395,7 @@
             ]
           },
           "properties": {
-            "id": 10,
+            "id": 6,
             "length_m": 89.24496651506071,
             "slope_min_deg": 22.765010833740234,
             "slope_max_deg": 29.60429573059082,
@@ -531,61 +423,7 @@
               [
                 -111.64088919950909,
                 40.58345420004785
-              ]
-            ]
-          },
-          "properties": {
-            "id": 11,
-            "length_m": 13.956956143952882,
-            "slope_min_deg": 30.71057891845703,
-            "slope_max_deg": 30.71057891845703,
-            "elevation_min_ft": 9152.515625,
-            "elevation_max_ft": 9152.515625,
-            "aspects": [
-              "N"
-            ],
-            "danger": "considerable",
-            "color": "orange",
-            "flagged": true,
-            "flag_reason": "steep_terrain"
-          }
-        },
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "LineString",
-            "coordinates": [
-              [
-                -111.64088919950909,
-                40.58345420004785
               ],
-              [
-                -111.64086039912728,
-                40.583330400085075
-              ]
-            ]
-          },
-          "properties": {
-            "id": 12,
-            "length_m": 13.956956143044462,
-            "slope_min_deg": 37.284400939941406,
-            "slope_max_deg": 37.284400939941406,
-            "elevation_min_ft": 9165.5439453125,
-            "elevation_max_ft": 9165.5439453125,
-            "aspects": [
-              "NW"
-            ],
-            "danger": "moderate",
-            "color": "yellow",
-            "flagged": false,
-            "flag_reason": null
-          }
-        },
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "LineString",
-            "coordinates": [
               [
                 -111.64086039912728,
                 40.583330400085075
@@ -597,61 +435,7 @@
               [
                 -111.64080279869093,
                 40.58308280012757
-              ]
-            ]
-          },
-          "properties": {
-            "id": 13,
-            "length_m": 27.913912286987596,
-            "slope_min_deg": 41.60287094116211,
-            "slope_max_deg": 42.94329833984375,
-            "elevation_min_ft": 9178.990234375,
-            "elevation_max_ft": 9232.9248046875,
-            "aspects": [
-              "N"
-            ],
-            "danger": "considerable",
-            "color": "orange",
-            "flagged": true,
-            "flag_reason": "steep_terrain"
-          }
-        },
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "LineString",
-            "coordinates": [
-              [
-                -111.64080279869093,
-                40.58308280012757
               ],
-              [
-                -111.64077399863638,
-                40.582959000132895
-              ]
-            ]
-          },
-          "properties": {
-            "id": 14,
-            "length_m": 13.956956143952882,
-            "slope_min_deg": 42.45219802856445,
-            "slope_max_deg": 42.45219802856445,
-            "elevation_min_ft": 9261.4755859375,
-            "elevation_max_ft": 9261.4755859375,
-            "aspects": [
-              "NW"
-            ],
-            "danger": "moderate",
-            "color": "yellow",
-            "flagged": false,
-            "flag_reason": null
-          }
-        },
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "LineString",
-            "coordinates": [
               [
                 -111.64077399863638,
                 40.582959000132895
@@ -663,11 +447,11 @@
             ]
           },
           "properties": {
-            "id": 15,
-            "length_m": 13.95695614396263,
-            "slope_min_deg": 35.7714729309082,
-            "slope_max_deg": 35.7714729309082,
-            "elevation_min_ft": 9274.607421875,
+            "id": 7,
+            "length_m": 83.74173686190045,
+            "slope_min_deg": 30.71057891845703,
+            "slope_max_deg": 42.94329833984375,
+            "elevation_min_ft": 9152.515625,
             "elevation_max_ft": 9274.607421875,
             "aspects": [
               "N"
@@ -750,7 +534,7 @@
             ]
           },
           "properties": {
-            "id": 16,
+            "id": 8,
             "length_m": 220.5652673251613,
             "slope_min_deg": 8.247978210449219,
             "slope_max_deg": 27.916379928588867,
@@ -782,7 +566,7 @@
             ]
           },
           "properties": {
-            "id": 17,
+            "id": 9,
             "length_m": 14.976131159859879,
             "slope_min_deg": 30.198551177978516,
             "slope_max_deg": 30.198551177978516,
@@ -817,7 +601,7 @@
             ]
           },
           "properties": {
-            "id": 18,
+            "id": 10,
             "length_m": 29.952262318101457,
             "slope_min_deg": 27.76914405822754,
             "slope_max_deg": 27.76914405822754,
@@ -856,7 +640,7 @@
             ]
           },
           "properties": {
-            "id": 19,
+            "id": 11,
             "length_m": 44.928393477961336,
             "slope_min_deg": 31.460102081298828,
             "slope_max_deg": 31.460102081298828,
@@ -979,7 +763,7 @@
             ]
           },
           "properties": {
-            "id": 20,
+            "id": 12,
             "length_m": 354.76774330764334,
             "slope_min_deg": 11.6043062210083,
             "slope_max_deg": 29.59152603149414,
@@ -1014,7 +798,7 @@
             ]
           },
           "properties": {
-            "id": 21,
+            "id": 13,
             "length_m": 14.730899342120107,
             "slope_min_deg": 34.850914001464844,
             "slope_max_deg": 34.850914001464844,
@@ -1113,7 +897,7 @@
             ]
           },
           "properties": {
-            "id": 22,
+            "id": 14,
             "length_m": 263.8932853818347,
             "slope_min_deg": 13.366679191589355,
             "slope_max_deg": 27.443510055541992,
@@ -1143,33 +927,6 @@
               [
                 -111.63414284115802,
                 40.57617639339647
-              ]
-            ]
-          },
-          "properties": {
-            "id": 23,
-            "length_m": 14.656610943339658,
-            "slope_min_deg": 33.2249755859375,
-            "slope_max_deg": 33.2249755859375,
-            "elevation_min_ft": 9747.5576171875,
-            "elevation_max_ft": 9747.5576171875,
-            "aspects": [
-              "W"
-            ],
-            "danger": "moderate",
-            "color": "yellow",
-            "flagged": false,
-            "flag_reason": null
-          }
-        },
-        {
-          "type": "Feature",
-          "geometry": {
-            "type": "LineString",
-            "coordinates": [
-              [
-                -111.63414284115802,
-                40.57617639339647
               ],
               [
                 -111.63399272400136,
@@ -1178,11 +935,11 @@
             ]
           },
           "properties": {
-            "id": 24,
-            "length_m": 14.656610943389909,
+            "id": 15,
+            "length_m": 29.313221886729565,
             "slope_min_deg": 33.0310173034668,
-            "slope_max_deg": 33.0310173034668,
-            "elevation_min_ft": 9776.8984375,
+            "slope_max_deg": 33.2249755859375,
+            "elevation_min_ft": 9747.5576171875,
             "elevation_max_ft": 9776.8984375,
             "aspects": [
               "NW"
@@ -1217,7 +974,7 @@
             ]
           },
           "properties": {
-            "id": 25,
+            "id": 16,
             "length_m": 43.96983283053925,
             "slope_min_deg": 21.34254264831543,
             "slope_max_deg": 25.55792236328125,
@@ -1325,7 +1082,7 @@
             ]
           },
           "properties": {
-            "id": 26,
+            "id": 17,
             "length_m": 293.13221886897475,
             "slope_min_deg": 30.943798065185547,
             "slope_max_deg": 41.50910186767578,
@@ -1356,7 +1113,7 @@
             ]
           },
           "properties": {
-            "id": 27,
+            "id": 18,
             "length_m": 14.656610943339658,
             "slope_min_deg": 28.011661529541016,
             "slope_max_deg": 28.011661529541016,
@@ -1365,26 +1122,53 @@
             "aspects": [
               "SE"
             ],
-            "danger": "considerable",
+            "danger": "no_rating",
             "color": "gray",
-            "flagged": true,
-            "flag_reason": "overhead_exposure"
+            "flagged": false,
+            "flag_reason": null
           }
         }
       ]
     },
+    "flagged_stretches": [
+      {
+        "id": 1,
+        "segment_ids": [
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17
+        ],
+        "flagged_length_m": 2003.5056870579547,
+        "max_danger": "considerable",
+        "pin": [
+          -111.63826365409619,
+          40.589115607872735
+        ]
+      }
+    ],
     "totals": {
       "length_m": 2226.7064634228204,
       "climb_ft": 2025.1064453125,
-      "steep_segment_count": 17,
-      "steep_length_m": 733.6833400561713,
+      "steep_segment_count": 8,
+      "steep_length_m": 733.6833400561715,
+      "steep_stretch_count": 6,
       "steep_ratings": [
         "low",
         "moderate",
         "considerable"
       ],
-      "flagged_length_m": 1916.0951304281787,
-      "flagged_stretch_count": 18,
+      "flagged_length_m": 2003.5056870579547,
+      "flagged_stretch_count": 1,
       "max_flagged_danger": "considerable"
     }
   },

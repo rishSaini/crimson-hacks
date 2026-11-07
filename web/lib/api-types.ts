@@ -11,7 +11,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Forecast */
+        /**
+         * Get Forecast
+         * @description Replay a saved demo day, or the sample forecast. Live UAC data needs an API token.
+         */
         get: operations["get_forecast_forecast_get"];
         put?: never;
         post?: never;
@@ -197,6 +200,8 @@ export interface components {
              */
             forced_by_warning: boolean;
             segments: components["schemas"]["SegmentCollection"];
+            /** Flagged Stretches */
+            flagged_stretches: components["schemas"]["FlaggedStretch"][];
             totals: components["schemas"]["RouteTotals"];
         };
         /** AvalancheProblem */
@@ -263,6 +268,40 @@ export interface components {
             feature_count: number;
         };
         /**
+         * FlaggedStretch
+         * @description One banner entry and numbered pin. Every flagged run stays in `segments`.
+         */
+        FlaggedStretch: {
+            /**
+             * Id
+             * @description 1-based pin number along the route
+             */
+            id: number;
+            /**
+             * Segment Ids
+             * @description The flagged runs it merges
+             */
+            segment_ids: number[];
+            /**
+             * Flagged Length M
+             * @description Flagged meters, not counting gaps
+             */
+            flagged_length_m: number;
+            /**
+             * Max Danger
+             * @enum {string}
+             */
+            max_danger: "no_rating" | "low" | "moderate" | "considerable" | "high" | "extreme";
+            /**
+             * Pin
+             * @description Where the first flagged run starts
+             */
+            pin: [
+                number,
+                number
+            ];
+        };
+        /**
          * ForecastAlert
          * @description UAC's alert for this forecast day. Text fields hold UAC's words, verbatim.
          */
@@ -276,6 +315,8 @@ export interface components {
             what?: string | null;
             /** Where */
             where?: string | null;
+            /** Impacts */
+            impacts?: string | null;
             /** What To Do */
             what_to_do?: string | null;
             /** Valid From */
@@ -320,6 +361,11 @@ export interface components {
              * @description UAC's words, verbatim
              */
             bottom_line: string;
+            /**
+             * Comparison Advice
+             * @description UAC's words, verbatim, for the comparison card on days that need them
+             */
+            comparison_advice?: string | null;
             /** Forecast Url */
             forecast_url: string;
         };
@@ -409,13 +455,21 @@ export interface components {
             /** Steep Length M */
             steep_length_m: number;
             /**
+             * Steep Stretch Count
+             * @description Those segments, merged when under 50 m apart, for the banner
+             */
+            steep_stretch_count: number;
+            /**
              * Steep Ratings
              * @description Ratings on those segments, lowest first, with no_rating before low
              */
             steep_ratings: ("no_rating" | "low" | "moderate" | "considerable" | "high" | "extreme")[];
             /** Flagged Length M */
             flagged_length_m: number;
-            /** Flagged Stretch Count */
+            /**
+             * Flagged Stretch Count
+             * @description Flagged runs merged when under 50 m apart, for the banner and pins
+             */
             flagged_stretch_count: number;
             /**
              * Max Flagged Danger
