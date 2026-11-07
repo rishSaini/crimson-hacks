@@ -11,7 +11,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Forecast */
+        /**
+         * Get Forecast
+         * @description Replay a saved demo day, or the sample forecast. Live UAC data needs an API token.
+         */
         get: operations["get_forecast_forecast_get"];
         put?: never;
         post?: never;
@@ -32,6 +35,57 @@ export interface paths {
         put?: never;
         /** Analyze */
         post: operations["analyze_analyze_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Suggestions */
+        post: operations["suggestions_suggestions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/endpoint-suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Endpoint Suggestions */
+        post: operations["endpoint_suggestions_endpoint_suggestions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Plan */
+        post: operations["plan_plan_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -119,9 +173,15 @@ export interface components {
             corridor_width_m: number;
             /**
              * Avoid At Or Above
+             * @description The setting actually applied
              * @enum {string}
              */
             avoid_at_or_above: "considerable" | "moderate" | "low";
+            /**
+             * Forced By Warning
+             * @description An Avalanche Warning forced low for this forecast day
+             */
+            forced_by_warning: boolean;
             /** Message */
             message: string;
             alternative?: components["schemas"]["LineString"] | null;
@@ -164,17 +224,28 @@ export interface components {
             source: "uac_live" | "demo_replay" | "fixture";
             /**
              * Avoid At Or Above
+             * @description The setting actually applied
              * @enum {string}
              */
             avoid_at_or_above: "considerable" | "moderate" | "low";
+            /**
+             * Forced By Warning
+             * @description An Avalanche Warning forced low for this forecast day
+             */
+            forced_by_warning: boolean;
             segments: components["schemas"]["SegmentCollection"];
+            /** Flagged Stretches */
+            flagged_stretches: components["schemas"]["FlaggedStretch"][];
             totals: components["schemas"]["RouteTotals"];
         };
         /** AvalancheProblem */
         AvalancheProblem: {
             /** Name */
             name: string;
-            /** Description */
+            /**
+             * Description
+             * @description UAC's words, verbatim
+             */
             description: string;
         };
         /** BriefingItem */
@@ -183,7 +254,10 @@ export interface components {
             segment_id: number;
             /** Avalanche Problem */
             avalanche_problem: string;
-            /** Note */
+            /**
+             * Note
+             * @description LLM output, checked by reject_safe_language
+             */
             note: string;
         };
         /** BriefingRequest */
@@ -210,6 +284,161 @@ export interface components {
             /** Items */
             items: components["schemas"]["BriefingItem"][];
         };
+        /** CatalogInfo */
+        CatalogInfo: {
+            /** Source */
+            source: string;
+            /** Source Url */
+            source_url: string;
+            /** Retrieved At */
+            retrieved_at: string;
+            /** License */
+            license: string;
+            /** License Url */
+            license_url: string;
+            /** Attribution */
+            attribution: string;
+            /** Feature Count */
+            feature_count: number;
+        };
+        /** EndpointSuggestionsRequest */
+        EndpointSuggestionsRequest: {
+            /**
+             * Max Difficulty
+             * @description Highest OSM piste grade the user accepts
+             * @enum {string}
+             */
+            max_difficulty: "novice" | "easy" | "intermediate" | "advanced" | "expert" | "extreme";
+            /** Max Distance M */
+            max_distance_m: number;
+            /** Max Climb Ft */
+            max_climb_ft: number;
+            /**
+             * Endpoint Tolerance M
+             * @default 200
+             */
+            endpoint_tolerance_m: number;
+            /**
+             * Limit
+             * @default 3
+             */
+            limit: number;
+            /** Start */
+            start: [
+                number,
+                number
+            ];
+            /** Destination */
+            destination: [
+                number,
+                number
+            ];
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Avoid At Or Above
+             * @default considerable
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
+        };
+        /** EndpointSuggestionsResponse */
+        EndpointSuggestionsResponse: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "uac_live" | "demo_replay" | "fixture";
+            /**
+             * Avoid At Or Above
+             * @description The setting actually applied
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
+            /** Forced By Warning */
+            forced_by_warning: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "found" | "no_match";
+            /** Message */
+            message: string;
+            catalog: components["schemas"]["CatalogInfo"];
+            /** Excluded */
+            excluded: {
+                [key: string]: number;
+            };
+            /** Limitations */
+            limitations: string[];
+            /** Suggestions */
+            suggestions: components["schemas"]["MappedSuggestion"][];
+        };
+        /**
+         * FlaggedStretch
+         * @description One banner entry and numbered pin. Every flagged run stays in `segments`.
+         */
+        FlaggedStretch: {
+            /**
+             * Id
+             * @description 1-based pin number along the route
+             */
+            id: number;
+            /**
+             * Segment Ids
+             * @description The flagged runs it merges
+             */
+            segment_ids: number[];
+            /**
+             * Flagged Length M
+             * @description Flagged meters, not counting gaps
+             */
+            flagged_length_m: number;
+            /**
+             * Max Danger
+             * @enum {string}
+             */
+            max_danger: "no_rating" | "low" | "moderate" | "considerable" | "high" | "extreme";
+            /**
+             * Pin
+             * @description Where the first flagged run starts
+             */
+            pin: [
+                number,
+                number
+            ];
+        };
+        /**
+         * ForecastAlert
+         * @description UAC's alert for this forecast day. Text fields hold UAC's words, verbatim.
+         */
+        ForecastAlert: {
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "none" | "watch" | "warning" | "special_bulletin";
+            /** What */
+            what?: string | null;
+            /** Where */
+            where?: string | null;
+            /** Impacts */
+            impacts?: string | null;
+            /** What To Do */
+            what_to_do?: string | null;
+            /** Valid From */
+            valid_from?: string | null;
+            /** Valid To */
+            valid_to?: string | null;
+        };
         /** ForecastResponse */
         ForecastResponse: {
             /** Zone */
@@ -229,6 +458,7 @@ export interface components {
              * @enum {string}
              */
             overall_danger: "no_rating" | "low" | "moderate" | "considerable" | "high" | "extreme";
+            alert: components["schemas"]["ForecastAlert"];
             /**
              * Ratings Issued
              * @description False if all 24 rose values are 0: the UI shows the no-ratings banner
@@ -241,8 +471,16 @@ export interface components {
             rose: components["schemas"]["RoseCell"][];
             /** Problems */
             problems: components["schemas"]["AvalancheProblem"][];
-            /** Bottom Line */
+            /**
+             * Bottom Line
+             * @description UAC's words, verbatim
+             */
             bottom_line: string;
+            /**
+             * Comparison Advice
+             * @description UAC's words, verbatim, for the comparison card on days that need them
+             */
+            comparison_advice?: string | null;
             /** Forecast Url */
             forecast_url: string;
         };
@@ -264,6 +502,98 @@ export interface components {
                 number,
                 number
             ][];
+        };
+        /** MappedSuggestion */
+        MappedSuggestion: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string | null;
+            /**
+             * Difficulty
+             * @enum {string}
+             */
+            difficulty: "novice" | "easy" | "intermediate" | "advanced" | "expert" | "extreme";
+            /**
+             * Route Scope
+             * @constant
+             */
+            route_scope: "mapped_section";
+            /** Source Urls */
+            source_urls: string[];
+            route: components["schemas"]["LineString"];
+            analysis: components["schemas"]["AnalyzeResponse"];
+            /** Start Distance M */
+            start_distance_m: number;
+            /** End Distance M */
+            end_distance_m: number;
+        };
+        /** PlanRequest */
+        PlanRequest: {
+            /** Start */
+            start: [
+                number,
+                number
+            ];
+            /** End */
+            end: [
+                number,
+                number
+            ];
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Avoid At Or Above
+             * @description Lowest rating to flag. It changes the flags, never the line
+             * @default considerable
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
+        };
+        /**
+         * PlanResponse
+         * @description A line chosen from terrain alone, with the forecast's flags on it from /analyze.
+         */
+        PlanResponse: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "uac_live" | "demo_replay" | "fixture";
+            /**
+             * Avoid At Or Above
+             * @description The setting actually applied
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
+            /**
+             * Forced By Warning
+             * @description An Avalanche Warning forced low for this forecast day
+             */
+            forced_by_warning: boolean;
+            /**
+             * Status
+             * @description no_route means terrain alone blocks every way between the points
+             * @enum {string}
+             */
+            status: "found" | "no_route";
+            /** Message */
+            message: string;
+            route?: components["schemas"]["LineString"] | null;
+            /** @description The /analyze result for route, which can include flags */
+            analysis?: components["schemas"]["AnalyzeResponse"] | null;
+            /** Limitations */
+            limitations: string[];
+            /** Attribution */
+            attribution: string;
         };
         /** RoseCell */
         RoseCell: {
@@ -332,13 +662,21 @@ export interface components {
             /** Steep Length M */
             steep_length_m: number;
             /**
+             * Steep Stretch Count
+             * @description Those segments, merged when under 50 m apart, for the banner
+             */
+            steep_stretch_count: number;
+            /**
              * Steep Ratings
              * @description Ratings on those segments, lowest first, with no_rating before low
              */
             steep_ratings: ("no_rating" | "low" | "moderate" | "considerable" | "high" | "extreme")[];
             /** Flagged Length M */
             flagged_length_m: number;
-            /** Flagged Stretch Count */
+            /**
+             * Flagged Stretch Count
+             * @description Flagged runs merged when under 50 m apart, for the banner and pins
+             */
             flagged_stretch_count: number;
             /**
              * Max Flagged Danger
@@ -407,6 +745,111 @@ export interface components {
             flagged: boolean;
             /** Flag Reason */
             flag_reason?: ("steep_terrain" | "unrated_terrain" | "overhead_exposure") | null;
+        };
+        /** SuggestedRoute */
+        SuggestedRoute: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string | null;
+            /**
+             * Difficulty
+             * @enum {string}
+             */
+            difficulty: "novice" | "easy" | "intermediate" | "advanced" | "expert" | "extreme";
+            /**
+             * Route Scope
+             * @constant
+             */
+            route_scope: "mapped_section";
+            /** Source Urls */
+            source_urls: string[];
+            route: components["schemas"]["LineString"];
+            analysis: components["schemas"]["AnalyzeResponse"];
+            /** Start Distance M */
+            start_distance_m: number;
+            /** End Distance M */
+            end_distance_m: number;
+            comparison: components["schemas"]["RouteComparison"];
+        };
+        /** SuggestionsRequest */
+        SuggestionsRequest: {
+            /**
+             * Max Difficulty
+             * @description Highest OSM piste grade the user accepts
+             * @enum {string}
+             */
+            max_difficulty: "novice" | "easy" | "intermediate" | "advanced" | "expert" | "extreme";
+            /** Max Distance M */
+            max_distance_m: number;
+            /** Max Climb Ft */
+            max_climb_ft: number;
+            /**
+             * Endpoint Tolerance M
+             * @default 200
+             */
+            endpoint_tolerance_m: number;
+            /**
+             * Limit
+             * @default 3
+             */
+            limit: number;
+            route: components["schemas"]["LineString"];
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Avoid At Or Above
+             * @description Lowest rating to flag. Unrated 30 degree terrain is always flagged
+             * @default considerable
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
+            /**
+             * Corridor Width M
+             * @default 400
+             */
+            corridor_width_m: number;
+        };
+        /** SuggestionsResponse */
+        SuggestionsResponse: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "uac_live" | "demo_replay" | "fixture";
+            /**
+             * Avoid At Or Above
+             * @description The setting actually applied
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
+            /** Forced By Warning */
+            forced_by_warning: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "found" | "no_match";
+            /** Message */
+            message: string;
+            catalog: components["schemas"]["CatalogInfo"];
+            /** Excluded */
+            excluded: {
+                [key: string]: number;
+            };
+            /** Limitations */
+            limitations: string[];
+            original_analysis: components["schemas"]["AnalyzeResponse"];
+            /** Suggestions */
+            suggestions: components["schemas"]["SuggestedRoute"][];
         };
         /** ValidationError */
         ValidationError: {
@@ -482,6 +925,105 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AnalyzeResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    suggestions_suggestions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SuggestionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SuggestionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_suggestions_endpoint_suggestions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndpointSuggestionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointSuggestionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    plan_plan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanResponse"];
                 };
             };
             /** @description Validation Error */

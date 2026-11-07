@@ -1,0 +1,180 @@
+{
+  "date": "2026-01-15",
+  "source": "fixture",
+  "avoid_at_or_above": "considerable",
+  "forced_by_warning": false,
+  "status": "found",
+  "message": "Mapped sections near both pins meet the selected limits.",
+  "catalog": {
+    "source": "OpenSkiData",
+    "source_url": "https://www.openskidata.org/",
+    "retrieved_at": "2026-11-07T02:59:32.710729+00:00",
+    "license": "ODbL-1.0",
+    "license_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+    "attribution": "Data from OpenSkiData / OpenSkiMap.org, \u00a9 OpenStreetMap contributors (ODbL), Skimap.org, Who's On First, \u00a9 Mapterhorn",
+    "feature_count": 20
+  },
+  "excluded": {
+    "difficulty_limit": 11,
+    "difficulty_unknown": 2,
+    "endpoints_too_far": 6
+  },
+  "limitations": [
+    "Catalog features can represent only sections of a tour. Confirm the complete itinerary.",
+    "Difficulty comes from OpenStreetMap piste tags. Snow conditions can change the required skills.",
+    "Access, closures, obstacles, snow coverage, and route completeness require separate confirmation.",
+    "Exposure checks use a 10 m DEM and the selected forecast. They do not establish route feasibility."
+  ],
+  "suggestions": [
+    {
+      "id": "702a3a0e8410b7692fc393a56cc3ea72fcd76edb",
+      "name": "White Pine Winter Trail",
+      "difficulty": "easy",
+      "route_scope": "mapped_section",
+      "source_urls": [
+        "https://www.openstreetmap.org/relation/13281931",
+        "https://www.openstreetmap.org/way/1176012634"
+      ],
+      "route": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -111.6815343,
+            40.5757892
+          ],
+          [
+            -111.6815358,
+            40.5757281
+          ],
+          [
+            -111.6815359,
+            40.5757035
+          ],
+          [
+            -111.6815378,
+            40.5755561
+          ],
+          [
+            -111.6815498,
+            40.5754884
+          ],
+          [
+            -111.6815509,
+            40.5754812
+          ],
+          [
+            -111.6815616,
+            40.5754422
+          ],
+          [
+            -111.6815836,
+            40.5753985
+          ],
+          [
+            -111.6816174,
+            40.5753536
+          ],
+          [
+            -111.6816731,
+            40.5752817
+          ]
+        ]
+      },
+      "analysis": {
+        "date": "2026-01-15",
+        "source": "fixture",
+        "avoid_at_or_above": "considerable",
+        "forced_by_warning": false,
+        "segments": {
+          "type": "FeatureCollection",
+          "features": [
+            {
+              "type": "Feature",
+              "geometry": {
+                "type": "LineString",
+                "coordinates": [
+                  [
+                    -111.6815343,
+                    40.57578920000001
+                  ],
+                  [
+                    -111.6815358,
+                    40.57572809999999
+                  ],
+                  [
+                    -111.6815359,
+                    40.57570350000001
+                  ],
+                  [
+                    -111.68153685000048,
+                    40.57562980000047
+                  ],
+                  [
+                    -111.6815378,
+                    40.57555610000001
+                  ],
+                  [
+                    -111.6815498,
+                    40.5754884
+                  ],
+                  [
+                    -111.6815509,
+                    40.57548119999999
+                  ],
+                  [
+                    -111.6815616,
+                    40.5754422
+                  ],
+                  [
+                    -111.6815836,
+                    40.57539850000001
+                  ],
+                  [
+                    -111.6816174,
+                    40.5753536
+                  ],
+                  [
+                    -111.6816731,
+                    40.5752817
+                  ]
+                ]
+              },
+              "properties": {
+                "id": 1,
+                "length_m": 58.90122159663633,
+                "slope_min_deg": 7.45069694519043,
+                "slope_max_deg": 11.070350646972656,
+                "elevation_min_ft": 7665.41552734375,
+                "elevation_max_ft": 7670.59228515625,
+                "aspects": [
+                  "S",
+                  "SW",
+                  "W",
+                  "NW"
+                ],
+                "danger": "no_rating",
+                "color": "gray",
+                "flagged": false,
+                "flag_reason": null
+              }
+            }
+          ]
+        },
+        "flagged_stretches": [],
+        "totals": {
+          "length_m": 58.90122159663633,
+          "climb_ft": 5.09130859375,
+          "steep_segment_count": 0,
+          "steep_length_m": 0.0,
+          "steep_stretch_count": 0,
+          "steep_ratings": [],
+          "flagged_length_m": 0.0,
+          "flagged_stretch_count": 0,
+          "max_flagged_danger": null
+        }
+      },
+      "start_distance_m": 8.880467840548238,
+      "end_distance_m": 8.880467213161511
+    }
+  ]
+}

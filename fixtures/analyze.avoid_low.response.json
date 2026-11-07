@@ -174,7 +174,25 @@
       "moderate"
     ],
     "flagged_length_m": 780,
-    "flagged_stretch_count": 3,
-    "max_flagged_danger": "moderate"
-  }
+    "flagged_stretch_count": 1,
+    "max_flagged_danger": "moderate",
+    "steep_stretch_count": 2
+  },
+  "forced_by_warning": false,
+  "flagged_stretches": [
+    {
+      "id": 1,
+      "segment_ids": [
+        2,
+        3,
+        4
+      ],
+      "flagged_length_m": 780,
+      "max_danger": "moderate",
+      "pin": [
+        -111.640918,
+        40.583578
+      ]
+    }
+  ]
 }

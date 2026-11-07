@@ -39,4 +39,19 @@ Read "Core logic" in `CLAUDE.md` first. Some of its rules are stricter than the 
 ## Rulings from Rishabh
 
 - **Overhead exposure follows `avoid_at_or_above`,** and unrated always counts. More "no clean line" results in `low` mode are expected, and the fallback options handle them, so don't loosen anything to avoid them.
-- **`POST /analyze` takes `avoid_at_or_above`** (same enum, default `considerable`), and `flagged` is computed server-side from that setting. The models, fixtures and tests already reflect this, but the stub ignores the setting. Your real `/analyze` has to apply it and echo it back. The response model rejects flags that don't match the setting.
+- **`POST /analyze` takes `avoid_at_or_above`** (same enum, default `considerable`), and `flagged` is computed server-side from that setting. Your `/analyze` applies it and echoes it back, and the response model rejects flags that don't match the setting.
+- **An Avalanche Warning forces `low` for that forecast day.** `/analyze` and `/suggestions` now do this through `effective_avoid_at_or_above` in `app/forecast.py`. `/alternative` still needs it when you build the reroute. Ali's UI never works this out.
+
+## Plan mode
+
+`POST /plan` finds a line from terrain alone and flags it, and avoiding danger is left to your reroute: see "Plan mode" in `CLAUDE.md`. The danger-avoiding search your reroute needs is already in `app/route_search.py` with tests. Please check the penalty values too, since they were picked without field testing.
+
+## Follow-ups from the review of your first terrain pass
+
+These are from merging `karthik/nearby-route-suggestions`.
+
+- **Please review `terrain-review-rulings`.** It changes your terrain code in three ways that Rishabh ruled on. A point now takes the worst rating among steep cells in its 3 by 3 window, instead of the steepest cell's. Overhead cells must also face the point, within 60 degrees. Flagged runs are all kept, and runs under 50 m apart merge for the banner and pins.
+- **Startup:** `load_grids` runs on the first request, not at server start. Load it at startup so the first request on stage isn't the slow one.
+- **Gray segments:** unflagged gray segments return `danger: no_rating`, which reads like unrated terrain. Return the forecast's rating there, or make sure the UI never shows it.
+- **Spot check:** still compare 3 known slopes against a published slope-angle map.
+

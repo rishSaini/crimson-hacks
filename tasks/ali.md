@@ -36,7 +36,14 @@ The stubs only return the default case. Import the rest from `fixtures/` directl
 | Low or Moderate only | `analyze.low_only`, `analyze.moderate_only`, `analyze.low_moderate` (`.response.json`) |
 | Same route at `avoid_at_or_above: low` | `analyze.avoid_low.response.json` |
 | Reroute at that setting | `alternative.avoid_low.response.json` |
+| Real Avalanche Warning forecast | `demo_days.json`, `2026-02-18` |
+| Real Special Bulletin forecast, with `comparison_advice` and no `what_to_do` | `demo_days.json`, `2026-02-21` |
+| Warning day analysis and reroute | `analyze.warning.response.json`, `alternative.warning.response.json` |
 | No clean line | `alternative.no_line.response.json` |
+
+## Plan mode
+
+The Draw/Plan toggle and Plan mode are in `components/RouteWorkspace.tsx`, `PlanLayers.tsx`, `PlanPanel.tsx` and `lib/usePlan.ts`. Draw mode is empty, ready for your click-to-draw. A plan can come back flagged, so show its flags the same way as a drawn route: use `analysis.flagged_stretches` for pins and the banner, and show the Reroute button if there are any, once the real `/alternative` lands. Keep the "Planning" state visible, since plans take a few seconds. It uses a fixed date and setting for now, so connect it to your date picker and settings.
 
 ## What you need from others
 
@@ -60,5 +67,9 @@ After anyone changes the API models, run `npm run gen:types` with the API runnin
 - **No UI exception for Beginner mode.** `flagged` is computed server-side from the `avoid_at_or_above` you send, so in Beginner mode a Low-rated steep stretch comes back flagged and the primary Reroute button shows on its own. Don't work out flags in the UI.
 
 - **"Avoid these too" applies to the current route only** and never changes the saved setting. After that reroute, the comparison card shows a text link, "Make this my default", which updates the saved setting only when tapped.
+- **Alerts are a full-width banner above everything.** On a Warning day the server forces `low` and returns `forced_by_warning: true`. The banner explains why everything steep is flagged, and the saved setting doesn't change.
+- **On Warning days the comparison card adds:** "UAC recommends avoiding all avalanche terrain today." Never imply a rerouted line makes going out okay.
+- **On days with `comparison_advice`, the comparison card shows it,** attributed to UAC. Feb 21 has it, and no threshold is forced that day.
+- **UAC's text is shown verbatim,** in a block attributed to UAC with a link to the full forecast. It can contain words like "safer", which is the one exception to the "safe" rule. Your own copy still can't use them, and a test scans `web/` for them.
 
-`POST /analyze` and `POST /alternative` both accept `avoid_at_or_above`, but the stubs ignore it and return the `considerable` fixture. Import the `avoid_low` fixtures to build the `low` states until the real endpoints land.
+`POST /analyze` is now real, using Karthik's terrain code, so it returns real segments. It works for dates `GET /forecast` can serve: `2026-02-21` (main demo day), `2026-02-18` (Warning example) and `2026-01-15` (made-up sample). Other dates return 404. Real responses split into many short segments, so test your line drawing against them, not only the fixtures. Use `flagged_stretches` for the banner and pins, where flagged runs under 50 m apart are merged, and `segments` for the line colors, where every run is kept. `POST /alternative` is still a stub that ignores `avoid_at_or_above`, so use the `avoid_low` fixtures for those states. `POST /suggestions` is new: see `data/routes/README.md`.

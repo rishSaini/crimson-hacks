@@ -1,13 +1,15 @@
-"""RedRun API. Every endpoint is a stub that returns data from fixtures/ for now."""
+"""RedRun API."""
 
+import json
 import os
 from datetime import date as Date
 from pathlib import Path
 from typing import TypeVar
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from rasterio.errors import RasterioIOError
 
 from app.models import (
     AlternativeRequest,
@@ -17,6 +19,15 @@ from app.models import (
     BriefingRequest,
     BriefingResponse,
     ForecastResponse,
+    PlanRequest,
+    PlanResponse,
+)
+from app.route_analysis import TerrainCoverageError, TerrainGrids, analyze_route, load_grids
+from app.route_planning import plan_route
+from app.route_search import load_osm
+from app.route_suggestions import (
+    Catalog, EndpointSuggestionsRequest, EndpointSuggestionsResponse,
+    SuggestionsRequest, SuggestionsResponse, load_catalog, suggest_from_endpoints, suggest_routes,
 )
 
 FIXTURES_DIR = Path(__file__).resolve().parents[2] / "fixtures"
@@ -41,12 +52,74 @@ app.add_middleware(
 
 @app.get("/forecast")
 def get_forecast(zone: str = "salt-lake", date: Date | None = None) -> ForecastResponse:
-    return load_fixture("forecast.response.json", ForecastResponse)
+    """Replay a saved demo day, or the sample forecast. Live UAC data needs an API token."""
+    if date is not None:
+        demo_days = json.loads((FIXTURES_DIR / "demo_days.json").read_text())
+        if date.isoformat() in demo_days:
+            return ForecastResponse.model_validate(demo_days[date.isoformat()])
+    forecast = load_fixture("forecast.response.json", ForecastResponse)
+    # Never hand back another day's forecast under the requested date.
+    if date is not None and forecast.date != date:
+        raise HTTPException(404, "No forecast is available for the requested date.")
+    return forecast
 
 
 @app.post("/analyze")
 def analyze(request: AnalyzeRequest) -> AnalyzeResponse:
-    return load_fixture("analyze.response.json", AnalyzeResponse)
+    forecast, grids = terrain_context(request.date)
+    try:
+        return analyze_route(request, forecast, grids)
+    except TerrainCoverageError as error:
+        raise HTTPException(422, str(error)) from error
+
+
+def terrain_context(date: Date) -> tuple[ForecastResponse, TerrainGrids]:
+    forecast = get_forecast(date=date)
+    if forecast.date != date:
+        raise HTTPException(404, "No forecast is available for the requested date.")
+    try:
+        grids = load_grids()
+    except (RasterioIOError, ValueError) as error:
+        raise HTTPException(503, "The terrain grids are unavailable.") from error
+    return forecast, grids
+
+
+def route_catalog() -> Catalog:
+    try:
+        return load_catalog()
+    except (OSError, ValueError) as error:
+        raise HTTPException(503, "The route catalog is unavailable.") from error
+
+
+@app.post("/suggestions")
+def suggestions(request: SuggestionsRequest) -> SuggestionsResponse:
+    forecast, grids = terrain_context(request.date)
+    try:
+        return suggest_routes(request, forecast, grids, route_catalog())
+    except TerrainCoverageError as error:
+        raise HTTPException(422, str(error)) from error
+
+
+@app.post("/endpoint-suggestions")
+def endpoint_suggestions(request: EndpointSuggestionsRequest) -> EndpointSuggestionsResponse:
+    forecast, grids = terrain_context(request.date)
+    try:
+        return suggest_from_endpoints(request, forecast, grids, route_catalog())
+    except TerrainCoverageError as error:
+        raise HTTPException(422, str(error)) from error
+
+
+@app.post("/plan")
+def plan(request: PlanRequest) -> PlanResponse:
+    forecast, grids = terrain_context(request.date)
+    try:
+        osm = load_osm()
+    except (OSError, ValueError) as error:
+        raise HTTPException(503, "The trail and ski area data is unavailable.") from error
+    try:
+        return plan_route(request, forecast, grids, osm)
+    except TerrainCoverageError as error:
+        raise HTTPException(422, str(error)) from error
 
 
 @app.post("/alternative")
