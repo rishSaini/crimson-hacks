@@ -1,4 +1,4 @@
-import type { ForecastResponse } from "./api";
+import type { AnalyzeResponse, ForecastResponse } from "./api";
 
 export type Danger = ForecastResponse["overall_danger"];
 export type Source = ForecastResponse["source"];
@@ -158,13 +158,18 @@ export const DANGER_TEXT: Record<Danger, string> = {
   no_rating: DANGER.no_rating.text,
 };
 
-export function isListedSegment(seg: any): boolean {
-  return Boolean(seg?.properties?.flagged || seg?.properties?.slope >= 30);
+type Segment = AnalyzeResponse["segments"]["features"][number];
+
+/** Listed in the summary: every 30°+ segment (any rating), plus anything flagged, like overhead exposure. */
+export function isListedSegment(seg: Segment): boolean {
+  return seg.properties.color !== "gray" || seg.properties.flagged;
 }
 
-export function describeSegment(seg: any): string {
-  const p = seg?.properties || {};
-  if (p.flag_reason === "overhead") return "Overhead hazard";
-  if (p.slope) return `${Math.round(p.slope)}° slope`;
-  return p.danger ? DANGER_LABEL[p.danger as Danger] : "Standard terrain";
+/** Short description from the analysis fields: overhead exposure, or the slope range and aspects. */
+export function describeSegment(seg: Segment): string {
+  const p = seg.properties;
+  if (p.flag_reason === "overhead_exposure") return "Below steep slopes (overhead exposure)";
+  const [lo, hi] = [Math.round(p.slope_min_deg), Math.round(p.slope_max_deg)];
+  const slope = lo === hi ? `${lo}°` : `${lo}–${hi}°`;
+  return `${slope} ${p.aspects.join("/")} slopes`;
 }
