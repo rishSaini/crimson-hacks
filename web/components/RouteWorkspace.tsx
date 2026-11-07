@@ -3,14 +3,18 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ApiCheck } from "@/components/ApiCheck";
+import { DrawPanel } from "@/components/DrawPanel";
 import { MapView } from "@/components/MapView";
+import { DrawRouteLayers } from "@/components/map/RouteLayers";
 import { PlanLayers } from "@/components/PlanLayers";
 import { PlanPanel } from "@/components/PlanPanel";
+import { useRouteDrawing } from "@/hooks/useRouteDrawing";
 import { usePlan, type LngLat } from "@/lib/usePlan";
 
 type Mode = "draw" | "plan";
 
 const DEMO_DATE = "2026-02-21";
+const AVOID_AT_OR_ABOVE = "considerable" as const;
 const INITIAL_POINTS = {
   start: [-111.72, 40.572] as LngLat,
   end: [-111.68, 40.578] as LngLat,
@@ -21,15 +25,25 @@ export function RouteWorkspace() {
   const { points, plan, onDragStart, onDrag, onDragEnd } = usePlan({
     enabled: mode === "plan",
     date: DEMO_DATE,
-    avoidAtOrAbove: "considerable",
+    avoidAtOrAbove: AVOID_AT_OR_ABOVE,
     initialPoints: INITIAL_POINTS,
+  });
+  const route = useRouteDrawing({
+    enabled: mode === "draw",
+    date: DEMO_DATE,
+    avoidAtOrAbove: AVOID_AT_OR_ABOVE,
   });
   const result = plan.result;
 
   return (
     <main className="flex h-screen flex-col md:flex-row">
       <div className="min-h-0 flex-1">
-        <MapView>
+        <MapView
+          drawing={route.isDrawing}
+          onClick={route.handleMapClick}
+          onDblClick={route.handleMapDblClick}
+        >
+          {mode === "draw" && <DrawRouteLayers route={route} />}
           {mode === "plan" && (
             <PlanLayers
               points={points}
@@ -58,11 +72,7 @@ export function RouteWorkspace() {
             </button>
           ))}
         </div>
-        {mode === "draw" ? (
-          <p className="text-sm text-neutral-600">Click-to-draw isn&apos;t built yet.</p>
-        ) : (
-          <PlanPanel plan={plan} />
-        )}
+        {mode === "draw" ? <DrawPanel route={route} /> : <PlanPanel plan={plan} />}
         <ApiCheck />
       </aside>
     </main>

@@ -1,10 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
-import { Layer, Marker, Source } from "react-map-gl/mapbox";
+import { useEffect, useMemo } from "react";
+import { Layer, Marker, Source, useMap } from "react-map-gl/mapbox";
+import type { RouteDrawing } from "@/hooks/useRouteDrawing";
 import type { Segment } from "@/lib/analysis";
 import type { AnalyzeResponse } from "@/lib/api";
-import { pointAlongLine, type LngLat } from "@/lib/geo";
+import { boundsOf, pointAlongLine, type LngLat } from "@/lib/geo";
 import {
   SEGMENT_HEX,
   SOURCE_IDS,
@@ -99,6 +100,36 @@ export function AnalyzedRoute({ segments }: SegmentsProps) {
           </span>
         </Marker>
       ))}
+    </>
+  );
+}
+
+/**
+ * Everything draw mode puts on the map. Render it inside <MapView>.
+ *
+ * - Drawing or analyzing: the dashed draft line, with waypoint dots while drawing.
+ * - Analyzed: segments colored by the server. If the API was unreachable, the
+ *   fixture's sample route is shown instead, with the user's line kept as a thin
+ *   white unanalyzed line, and the camera moves to the sample route.
+ */
+export function DrawRouteLayers({ route }: { route: RouteDrawing }) {
+  const { current: map } = useMap();
+  const { phase, points, analysis, isDrawing } = route;
+  const segments = phase === "analyzed" && analysis ? analysis.data.segments.features : null;
+  const offline = analysis?.offline ?? false;
+
+  useEffect(() => {
+    if (!map || !segments || !offline) return;
+    const coords = segments.flatMap((s) => s.geometry.coordinates as LngLat[]);
+    if (coords.length > 0) map.fitBounds(boundsOf(coords), { padding: 96, duration: 1200 });
+  }, [map, segments, offline]);
+
+  return (
+    <>
+      {(!segments || offline) && (
+        <DraftRoute points={points} showWaypoints={isDrawing} unanalyzed={offline && !!segments} />
+      )}
+      {segments && <AnalyzedRoute segments={segments} />}
     </>
   );
 }

@@ -2,80 +2,82 @@ import type { Fetched } from "@/lib/analysis";
 import type { AnalyzeResponse } from "@/lib/api";
 import { formatDistance } from "@/lib/geo";
 import { sourceLabel, summarizeRoute, type SummaryTone } from "@/lib/route-summary";
-import type { DrawPhase } from "@/hooks/useRouteDrawing";
-
-type Props = {
-  phase: DrawPhase;
-  pointCount: number;
-  analysis: Fetched<AnalyzeResponse> | null;
-  error: string | null;
-};
+import { SEGMENT_HEX } from "@/lib/segment-style";
 
 const TONE_CLASSES: Record<SummaryTone, string> = {
-  flagged: "border-red-500/60 bg-red-950/70 text-red-50",
-  listed: "border-amber-400/60 bg-amber-950/70 text-amber-50",
-  none: "border-neutral-500/60 bg-neutral-800/80 text-neutral-200",
+  flagged: "border-red-300 bg-red-50 text-red-900",
+  listed: "border-amber-300 bg-amber-50 text-amber-900",
+  none: "border-neutral-300 bg-neutral-100 text-neutral-700",
 };
 
-const CARD = "pointer-events-auto w-80 max-w-[calc(100vw-1.5rem)] rounded-lg border border-white/10 bg-neutral-950/80 p-3 text-sm text-neutral-100 shadow-lg backdrop-blur";
+const meters = (m: number) => `${Math.round(m).toLocaleString("en-US")} m`;
 
-/** Floating card: drawing hints, then distance, steep segment count, banner and data source. */
-export function RouteStatus({ phase, pointCount, analysis, error }: Props) {
-  if (phase === "drawing") {
-    return (
-      <div className={CARD}>
-        <p className="font-medium">Draw your tour</p>
-        <p className="mt-1 text-neutral-300">
-          {pointCount === 0
-            ? "Click the map to drop waypoints. Double-click to finish."
-            : `${pointCount} ${pointCount === 1 ? "waypoint" : "waypoints"}. Double-click or press Finish to check the route.`}
-        </p>
-      </div>
-    );
-  }
-
-  if (phase === "analyzing") {
-    return (
-      <div className={CARD} role="status" aria-live="polite">
-        <p className="font-medium">Checking route against the forecast…</p>
-      </div>
-    );
-  }
-
-  if (phase === "error" || !analysis) {
-    return (
-      <div className={`${CARD} border-red-500/60`} role="alert">
-        <p className="font-medium text-red-300">Route analysis failed</p>
-        <p className="mt-1 text-neutral-300">{error ?? "No response from the API."}</p>
-      </div>
-    );
-  }
-
+/** Route summary after POST /analyze: banner, totals, legend and data source. */
+export function RouteStatus({ analysis }: { analysis: Fetched<AnalyzeResponse> }) {
   const { data, offline } = analysis;
   const { totals } = data;
   const summary = summarizeRoute(totals);
 
   return (
-    <div className={CARD} role="status" aria-live="polite">
+    <div className="space-y-3 text-sm" data-testid="route-summary">
       {offline && (
-        <p className="mb-2 rounded border border-amber-400/60 bg-amber-900/60 p-2 text-amber-50">
+        <p className="rounded border border-amber-300 bg-amber-50 p-2 text-amber-900">
           API unreachable. Showing the sample fixture route, not your line.
         </p>
       )}
 
-      <dl className="grid grid-cols-2 gap-x-3 gap-y-1">
-        <dt className="text-neutral-400">Distance</dt>
+      {data.forced_by_warning && (
+        <p className="rounded border border-red-300 bg-red-50 p-2 text-red-900">
+          An Avalanche Warning is in effect for this forecast day, so every slope 30° and
+          steeper is flagged.
+        </p>
+      )}
+
+      <p className={`rounded border p-2 ${TONE_CLASSES[summary.tone]}`} data-testid="route-banner">
+        {summary.text}
+      </p>
+
+      <dl className="grid grid-cols-[1fr_auto] gap-x-3 gap-y-1">
+        <dt className="text-neutral-600">Distance</dt>
         <dd className="text-right tabular-nums">{formatDistance(totals.length_m)}</dd>
-        <dt className="text-neutral-400">Steep segments (30°+)</dt>
+        <dt className="text-neutral-600">Climb</dt>
+        <dd className="text-right tabular-nums">
+          {Math.round(totals.climb_ft).toLocaleString("en-US")} ft
+        </dd>
+        <dt className="text-neutral-600">Steep segments (30°+)</dt>
         <dd className="text-right tabular-nums">{totals.steep_segment_count}</dd>
+        <dt className="text-neutral-600">Flagged stretches</dt>
+        <dd className="text-right tabular-nums">
+          {totals.flagged_stretch_count}
+          {totals.flagged_stretch_count > 0 && ` (${meters(totals.flagged_length_m)})`}
+        </dd>
       </dl>
 
-      <p className={`mt-2 rounded border p-2 ${TONE_CLASSES[summary.tone]}`}>{summary.text}</p>
+      <ul className="space-y-1 text-xs text-neutral-600" aria-label="Line legend">
+        <LegendItem color={SEGMENT_HEX.gray} label="Under 30°: no avalanche-terrain flag" />
+        <LegendItem color={SEGMENT_HEX.unrated} dashed label="30°+ with no rating today (? pin)" />
+        <li>Colored lines are 30°+, by today&apos;s rating. Thicker lines are flagged at your setting.</li>
+      </ul>
 
-      <p className="mt-2 text-xs text-neutral-400">
+      <p className="text-xs text-neutral-600">
         {sourceLabel(data.source, data.date)}{" "}
-        <code className="rounded bg-white/10 px-1 font-mono">source: {data.source}</code>
+        <code className="rounded bg-neutral-100 px-1 font-mono dark:bg-neutral-800">
+          source: {data.source}
+        </code>
       </p>
     </div>
+  );
+}
+
+function LegendItem({ color, label, dashed = false }: { color: string; label: string; dashed?: boolean }) {
+  return (
+    <li className="flex items-center gap-2">
+      <span
+        aria-hidden
+        className="inline-block w-6 border-t-[3px]"
+        style={{ borderColor: color, borderStyle: dashed ? "dashed" : "solid" }}
+      />
+      {label}
+    </li>
   );
 }
