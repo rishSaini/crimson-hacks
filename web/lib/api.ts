@@ -9,11 +9,14 @@ export type AlternativeRequest = Schemas["AlternativeRequest"];
 export type AlternativeResponse = Schemas["AlternativeResponse"];
 export type BriefingRequest = Schemas["BriefingRequest"];
 export type BriefingResponse = Schemas["BriefingResponse"];
+export type PlanRequest = Schemas["PlanRequest"];
+export type PlanResponse = Schemas["PlanResponse"];
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-async function request<T>(path: string, body?: unknown): Promise<T> {
+async function request<T>(path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, {
+    signal,
     method: body === undefined ? "GET" : "POST",
     headers: body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -31,4 +34,6 @@ export const api = {
   alternative: (body: AlternativeRequest) =>
     request<AlternativeResponse>("/alternative", body),
   briefing: (body: BriefingRequest) => request<BriefingResponse>("/briefing", body),
+  plan: (body: PlanRequest, signal?: AbortSignal) =>
+    request<PlanResponse>("/plan", body, signal),
 };
