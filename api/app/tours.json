@@ -1,0 +1,348 @@
+{
+ "source": "Trail ends from OpenStreetMap, data/osm/trails.geojson",
+ "attribution": "© OpenStreetMap contributors (ODbL)",
+ "tours": [
+  {
+   "id": "white_pine",
+   "name": "White Pine Trail",
+   "canyon": "little_cottonwood",
+   "trailhead": {
+    "osm_way": "way/967618611",
+    "position": [
+     -111.6812231,
+     40.5755945
+    ]
+   },
+   "objective": {
+    "osm_way": "way/159550230",
+    "position": [
+     -111.6792186,
+     40.5401234
+    ]
+   }
+  },
+  {
+   "id": "red_pine",
+   "name": "Red Pine Trail, from the White Pine trailhead",
+   "canyon": "little_cottonwood",
+   "trailhead": {
+    "osm_way": "way/967618611",
+    "position": [
+     -111.6812231,
+     40.5755945
+    ]
+   },
+   "objective": {
+    "osm_way": "way/618288737",
+    "position": [
+     -111.6924944,
+     40.5423262
+    ]
+   }
+  },
+  {
+   "id": "maybird_gulch",
+   "name": "Maybird Gulch Trail, from the White Pine trailhead",
+   "canyon": "little_cottonwood",
+   "trailhead": {
+    "osm_way": "way/967618611",
+    "position": [
+     -111.6812231,
+     40.5755945
+    ]
+   },
+   "objective": {
+    "osm_way": "way/223937849",
+    "position": [
+     -111.7037806,
+     40.5446983
+    ]
+   }
+  },
+  {
+   "id": "twin_lakes_pass",
+   "name": "Twin Lakes Pass Trail",
+   "canyon": "little_cottonwood",
+   "trailhead": {
+    "osm_way": "way/1546367827",
+    "position": [
+     -111.628,
+     40.5940216
+    ]
+   },
+   "objective": {
+    "osm_way": "way/1192577921",
+    "position": [
+     -111.6091518,
+     40.5945574
+    ]
+   }
+  },
+  {
+   "id": "little_cottonwood_creek",
+   "name": "Little Cottonwood Creek Trail",
+   "canyon": "little_cottonwood",
+   "trailhead": {
+    "osm_way": "way/973189389",
+    "position": [
+     -111.7602515,
+     40.5710016
+    ]
+   },
+   "objective": {
+    "osm_way": "way/362501686",
+    "position": [
+     -111.7267965,
+     40.5723488
+    ]
+   }
+  },
+  {
+   "id": "mill_d_north",
+   "name": "Mill D North Fork Trail",
+   "canyon": "big_cottonwood",
+   "trailhead": {
+    "osm_way": "way/10125659",
+    "position": [
+     -111.6482783,
+     40.6494671
+    ]
+   },
+   "objective": {
+    "osm_way": "way/993653148",
+    "position": [
+     -111.6386816,
+     40.6667631
+    ]
+   }
+  },
+  {
+   "id": "desolation",
+   "name": "Desolation Trail, from the Mill D North Fork trailhead",
+   "canyon": "big_cottonwood",
+   "trailhead": {
+    "osm_way": "way/10125659",
+    "position": [
+     -111.6482783,
+     40.6494671
+    ]
+   },
+   "objective": {
+    "osm_way": "way/1070719089",
+    "position": [
+     -111.6000349,
+     40.6621596
+    ]
+   }
+  },
+  {
+   "id": "butler_fork",
+   "name": "Butler Fork Trail",
+   "canyon": "big_cottonwood",
+   "trailhead": {
+    "osm_way": "way/731260375",
+    "position": [
+     -111.661676,
+     40.6493063
+    ]
+   },
+   "objective": {
+    "osm_way": "way/225276812",
+    "position": [
+     -111.6467257,
+     40.6673662
+    ]
+   }
+  },
+  {
+   "id": "cardiff_fork",
+   "name": "Cardiff Fork Trail",
+   "canyon": "big_cottonwood",
+   "trailhead": {
+    "osm_way": "way/966549315",
+    "position": [
+     -111.6520533,
+     40.6397799
+    ]
+   },
+   "objective": {
+    "osm_way": "way/302307284",
+    "position": [
+     -111.6526515,
+     40.6111509
+    ]
+   }
+  },
+  {
+   "id": "donut_falls",
+   "name": "Donut Falls Trail",
+   "canyon": "big_cottonwood",
+   "trailhead": {
+    "osm_way": "way/1208314047",
+    "position": [
+     -111.6481002,
+     40.6475982
+    ]
+   },
+   "objective": {
+    "osm_way": "way/186853942",
+    "position": [
+     -111.6511959,
+     40.638999
+    ]
+   }
+  },
+  {
+   "id": "mineral_fork",
+   "name": "Mineral Fork Trail",
+   "canyon": "big_cottonwood",
+   "trailhead": {
+    "osm_way": "way/10126405",
+    "position": [
+     -111.6985513,
+     40.6366165
+    ]
+   },
+   "objective": {
+    "osm_way": "way/362188738",
+    "position": [
+     -111.6736411,
+     40.600705
+    ]
+   }
+  },
+  {
+   "id": "lake_blanche",
+   "name": "Lake Blanche Trail",
+   "canyon": "big_cottonwood",
+   "trailhead": {
+    "osm_way": "way/85775490",
+    "position": [
+     -111.723217,
+     40.6331554
+    ]
+   },
+   "objective": {
+    "osm_way": "way/85775499",
+    "position": [
+     -111.6973331,
+     40.6058451
+    ]
+   }
+  },
+  {
+   "id": "broads_fork",
+   "name": "Broads Fork Trail",
+   "canyon": "big_cottonwood",
+   "trailhead": {
+    "osm_way": "way/1333558922",
+    "position": [
+     -111.723743,
+     40.6332272
+    ]
+   },
+   "objective": {
+    "osm_way": "way/172873803",
+    "position": [
+     -111.7172091,
+     40.6121736
+    ]
+   }
+  },
+  {
+   "id": "mill_b_north",
+   "name": "Mill B North Trail",
+   "canyon": "big_cottonwood",
+   "trailhead": {
+    "osm_way": "way/988715475",
+    "position": [
+     -111.7241732,
+     40.6345122
+    ]
+   },
+   "objective": {
+    "osm_way": "way/364774642",
+    "position": [
+     -111.704375,
+     40.6542462
+    ]
+   }
+  },
+  {
+   "id": "days_fork",
+   "name": "Days Fork Trail",
+   "canyon": "big_cottonwood",
+   "trailhead": {
+    "osm_way": "way/993540269",
+    "position": [
+     -111.6384965,
+     40.6408785
+    ]
+   },
+   "objective": {
+    "osm_way": "way/364701232",
+    "position": [
+     -111.6396209,
+     40.6012857
+    ]
+   }
+  },
+  {
+   "id": "silver_fork",
+   "name": "Silver Fork Trail",
+   "canyon": "big_cottonwood",
+   "trailhead": {
+    "osm_way": "way/1331196602",
+    "position": [
+     -111.6122906,
+     40.6255849
+    ]
+   },
+   "objective": {
+    "osm_way": "way/1097309587",
+    "position": [
+     -111.6181993,
+     40.6000652
+    ]
+   }
+  },
+  {
+   "id": "beartrap_fork",
+   "name": "Beartrap Fork Trail",
+   "canyon": "big_cottonwood",
+   "trailhead": {
+    "osm_way": "way/804910960",
+    "position": [
+     -111.6216688,
+     40.6381379
+    ]
+   },
+   "objective": {
+    "osm_way": "way/258706032",
+    "position": [
+     -111.5974936,
+     40.6568822
+    ]
+   }
+  },
+  {
+   "id": "brighton_lakes",
+   "name": "Brighton Lakes Trail",
+   "canyon": "big_cottonwood",
+   "trailhead": {
+    "osm_way": "way/182573712",
+    "position": [
+     -111.5831017,
+     40.5973504
+    ]
+   },
+   "objective": {
+    "osm_way": "way/512161023",
+    "position": [
+     -111.5959124,
+     40.5975033
+    ]
+   }
+  }
+ ]
+}

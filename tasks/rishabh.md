@@ -46,7 +46,7 @@ The forecast never blocks anyone: Karthik and Ali can use the fixtures until you
 
 ## Also yours
 
-- Add `POST /agent` and its models. It isn't stubbed yet, and it's a contract change, so tell the team first.
+- `POST /agent` is built on the `llm-route-agent` branch. It's a contract change, so tell the team before merging. Ali needs to add the prompt box and cards: see `fixtures/agent.response.json`.
 - Record the backup demo video and rehearse the 3-minute pitch.
 - Verify the deaths cited in the pitch's hook against UAC's report and the February 2026 source.
 - Decide how to acknowledge Feb 18 and Feb 21 on stage. Both archived forecasts are kept in relation to fatalities, and Feb 21's text describes the two that week.

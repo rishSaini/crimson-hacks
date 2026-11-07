@@ -24,7 +24,7 @@ Owns the forecast, briefing and agent modules in `api/app/`, plus `fixtures/demo
 
 ## Hour 6 to 12: demo features
 
-- [ ] Replace the `POST /briefing` stub: Claude API (`claude-sonnet-5-5`) with structured JSON output
+- [ ] Replace the `POST /briefing` stub: OpenAI Responses API (`gpt-6.1-sol`) with structured JSON output
 - [ ] Pass only the forecast text and computed segments
 - [ ] Prompt: cite the segment and avalanche problem in each sentence, never say a route is safe, and describe unrated segments as unrated, not as low danger
 - [ ] Validate the JSON before returning it. `BriefingItem` rejects "safe" and its variants, even when quoting UAC, so catch that and fall back to a template sentence
@@ -33,16 +33,19 @@ Owns the forecast, briefing and agent modules in `api/app/`, plus `fixtures/demo
 
 Reroute comes first (see `tasks/terrain.md`). Then:
 
-- [ ] Add `POST /agent` and its models: plain-language request and date in, streamed route cards out
-- [ ] Parse the request into a constraint object: canyon, max climb, max distance, max flagged meters, date
-- [ ] Tools: `get_forecast`, `search_tours`, `analyze_route`, `reroute`, `plan_route`, capped at about 8 calls per request
-- [ ] Pass the user's `avoid_at_or_above` to `analyze_route` and `reroute`, so "nothing flagged" means the same thing as on the map
-- [ ] Ids only: tour, trailhead and objective ids are enums in the schemas, and the model never outputs coordinates
-- [ ] Every candidate passes analysis in the same request and must meet the constraints to be called a match
-- [ ] Rank by constraint fit, then flagged meters, then distance from the user's wording
-- [ ] Render card numbers from tool JSON; check numbers in the LLM sentence against tool results, and fall back to a template sentence
-- [ ] "Nothing fits" is a valid answer: offer the closest options
-- [ ] Run 15 to 20 scripted prompts, including impossible ones, and confirm the agent declines them
+- [x] Add `POST /agent` and its models: plain-language request and date in, route cards out. Not streamed: it's one model call after about 4 s of planning
+- [x] Parse the request into constraints: canyon, max climb, max distance. Flagged terrain is always a miss, so there's no max flagged meters
+- [x] Check all 18 library tours on the server, then make one model call. Planning takes about 0.2 s per tour, so this replaced the planned tool loop and 8-call cap
+- [x] Pass the user's `avoid_at_or_above` to planning, so "nothing flagged" means the same thing as on the map
+- [x] Ids only: tour ids are an enum in the schema, and the model never outputs coordinates
+- [x] Every candidate passes analysis in the same request and must meet the constraints to be called a match
+- [x] Rank by constraint fit, then flagged meters, then the model's order. A named canyon counts ahead of other limits
+- [x] Render card numbers from analysis; check numbers in the LLM sentence against computed facts, and fall back to a template sentence
+- [x] "Nothing fits" is a valid answer: offer the closest options
+- [x] Try it against the real model, with a normal request, a Warning day, out of scope, Millcreek, impossible limits and a prompt injection
+- [ ] Offer rerouted lines on cards, once `POST /alternative` is real. On Feb 21 every tour is flagged, and avoiding flagged terrain cuts Little Cottonwood Creek from 3,098 to 120 flagged meters
+- [ ] Run the rest of the 15 to 20 scripted prompts, including impossible ones, and confirm the agent declines them
+- [ ] Ask Karthik to extend the DEM north so the Millcreek trailheads are covered
 - [ ] Back the "Go somewhere else" fallback with the agent
 
 ## Hour 18 to 22: polish and proof

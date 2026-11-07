@@ -22,6 +22,7 @@ from app.models import (
     PlanRequest,
     PlanResponse,
 )
+from app.route_agent import AgentRequest, AgentResponse, AgentUnavailable, suggest_tours
 from app.route_analysis import TerrainCoverageError, TerrainGrids, analyze_route, load_grids
 from app.route_planning import plan_route
 from app.route_search import load_osm
@@ -107,6 +108,19 @@ def plan(request: PlanRequest) -> PlanResponse:
         return plan_route(request, forecast, grids, osm)
     except TerrainCoverageError as error:
         raise HTTPException(422, str(error)) from error
+
+
+@app.post("/agent")
+def agent(request: AgentRequest) -> AgentResponse:
+    forecast, grids = terrain_context(request.date)
+    try:
+        osm = load_osm()
+    except (OSError, ValueError) as error:
+        raise HTTPException(503, "The trail and ski area data is unavailable.") from error
+    try:
+        return suggest_tours(request, forecast, grids, osm)
+    except AgentUnavailable as error:
+        raise HTTPException(503, str(error)) from error
 
 
 @app.post("/alternative")

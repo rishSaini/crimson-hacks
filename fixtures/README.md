@@ -1,6 +1,6 @@
 # Fixtures
 
-Example requests and responses for each endpoint. The API stubs return the `*.response.json` files, except `POST /analyze` and `POST /suggestions`, which now compute real results.
+Example requests and responses for each endpoint. The API stubs return the `*.response.json` files, except `POST /analyze` and `POST /suggestions`, which now compute real results, and `POST /plan` and `POST /agent`, which do too.
 
 **This is made-up data for building the UI. It is not a real forecast, and the route's colors don't reflect the real terrain under it.** Every response carries `"source": "fixture"` so the UI can say so.
 
@@ -23,6 +23,8 @@ The stubs don't return these other states, so import them directly when building
 - `analyze.warning.response.json`, `alternative.warning.response.json`: an Avalanche Warning day, with `avoid_at_or_above` forced to `low` and `forced_by_warning: true`.
 
 - `plan.request.json`, `plan.response.json`, `plan.no_route.response.json`: real `POST /plan` results on the Feb 21 forecast. A plan is chosen from terrain alone, so it can come back flagged. `no_route` means slopes of 45 degrees or more block every way through.
+
+- `agent.request.json`, `agent.response.json`: `POST /agent` on the Feb 21 forecast. The routes and numbers are computed, but the two `reason` sentences are scripted, because this was generated without a live model call. Every tour is flagged that day, so the result is `no_match` with the closest options.
 
 `demo_days.json` holds real replayed forecast days, keyed by date, with `"source": "demo_replay"`. **Unlike the other files, this is real UAC data.** Its `bottom_line`, `problems` and `alert` text is verbatim, including any typos, so don't edit it. Copy new days from a published UAC forecast, and never write them from memory.
 

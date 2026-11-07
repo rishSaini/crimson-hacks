@@ -75,6 +75,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/agent": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Agent */
+        post: operations["agent_agent_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/alternative": {
         parameters: {
             query?: never;
@@ -113,6 +130,61 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AgentRequest */
+        AgentRequest: {
+            /** Prompt */
+            prompt: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Avoid At Or Above
+             * @description Lowest rating to flag. Unrated 30 degree terrain is always flagged
+             * @default considerable
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
+        };
+        /** AgentResponse */
+        AgentResponse: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "uac_live" | "demo_replay" | "fixture";
+            /**
+             * Avoid At Or Above
+             * @description The setting actually applied
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
+            /** Forced By Warning */
+            forced_by_warning: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "found" | "no_match" | "out_of_scope";
+            /** Message */
+            message: string;
+            constraints: components["schemas"]["TourConstraints"];
+            /** Cards */
+            cards: components["schemas"]["TourCard"][];
+            /** Notices */
+            notices: string[];
+            /** Limitations */
+            limitations: string[];
+            uac: components["schemas"]["UacContext"];
+            /** Attribution */
+            attribution: string;
+        };
         /** AlternativeRequest */
         AlternativeRequest: {
             route: components["schemas"]["LineString"];
@@ -728,6 +800,69 @@ export interface components {
             /** Limitations */
             limitations: string[];
         };
+        /** TourCard */
+        TourCard: {
+            /** Tour Id */
+            tour_id: string;
+            /** Name */
+            name: string;
+            /**
+             * Canyon
+             * @enum {string}
+             */
+            canyon: "big_cottonwood" | "little_cottonwood" | "millcreek";
+            /**
+             * Matches
+             * @description True if `misses` is empty
+             */
+            matches: boolean;
+            /** Misses */
+            misses: ("canyon" | "max_climb_ft" | "max_distance_m" | "flagged_terrain")[];
+            route: components["schemas"]["LineString"];
+            analysis: components["schemas"]["AnalyzeResponse"];
+            /**
+             * Round Trip M
+             * @description Twice analysis.totals.length_m
+             */
+            round_trip_m: number;
+            /**
+             * Reason
+             * @description LLM text that passed checks, or a RedRun template
+             */
+            reason: string;
+            /**
+             * Reason Source
+             * @enum {string}
+             */
+            reason_source: "assistant" | "redrun";
+        };
+        /**
+         * TourConstraints
+         * @description What the assistant read from the request. The UI shows these so a misreading shows.
+         */
+        TourConstraints: {
+            /** Canyon */
+            canyon?: ("big_cottonwood" | "little_cottonwood" | "millcreek") | null;
+            /** Max Climb Ft */
+            max_climb_ft?: number | null;
+            /**
+             * Max Distance M
+             * @description Round trip
+             */
+            max_distance_m?: number | null;
+        };
+        /**
+         * UacContext
+         * @description UAC's words, verbatim. Show them attributed to UAC, with a link to the forecast.
+         */
+        UacContext: {
+            /** Bottom Line */
+            bottom_line: string;
+            /** Comparison Advice */
+            comparison_advice: string | null;
+            /** Forecast Url */
+            forecast_url: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -868,6 +1003,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlanResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agent_agent_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentResponse"];
                 };
             };
             /** @description Validation Error */

@@ -130,6 +130,16 @@ Terrain cost per cell is 1, plus a skinning penalty per degree above 25, a penal
 
 OSM data comes from `data/prep_osm.py`, fetched once and committed in `data/osm/`. Keep its ODbL attribution.
 
+## Route assistant
+
+`POST /agent` takes a plain-language `prompt`, `date` and `avoid_at_or_above`. The code is in `api/app/route_agent.py`, and the tours in `api/app/tours.json`.
+
+- The server plans and flags every library tour first, then makes one model call. The model reads the request into `constraints` and shortlists tour ids with a sentence each. It never outputs coordinates.
+- The server decides everything else. Flagged terrain is always a miss, so a tour only counts as a match with no flags. Cards rank by the named canyon, then other stated limits met, then flagged meters, and the top-ranked tour always gets a card, so a shortlist can't hide it.
+- Each sentence is checked for banned words, verdicts and numbers that aren't in the tour's facts or the user's request. If it fails, the card uses a RedRun template. `reason_source` says which.
+- Every tour point is a vertex of a named OSM way, so don't add one from memory. A test enforces this.
+- Millcreek's trailheads are outside the DEM, so the library has no Millcreek tours and the response says so.
+
 ## Conventions
 
 - Positions are GeoJSON `[lng, lat]`. Distances are meters; elevation and climb are feet; the DEM is in meters, so convert.
@@ -139,4 +149,4 @@ OSM data comes from `data/prep_osm.py`, fetched once and committed in `data/osm/
 - Avalanche.org only has one overall rating per zone. Never apply it to every aspect as a stand-in for the rose.
 - Fixtures are made up and marked `source: fixture`. Real demo days go in `fixtures/demo_days.json`, copied from a published forecast.
 - Secrets go in `.env` files, which are ignored by git. The DEM grids are committed.
-- Model for the LLM features: `claude-sonnet-5-5`.
+- Model for the LLM features: OpenAI `gpt-6.1-sol`, through the Responses API. The key is `OPENAI_API_KEY`.
