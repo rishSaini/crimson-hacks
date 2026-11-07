@@ -30,6 +30,7 @@ Reroute comes first (see `tasks/terrain.md`). Then:
 - [ ] Add `POST /agent` and its models: plain-language request and date in, streamed route cards out
 - [ ] Parse the request into a constraint object: canyon, max climb, max distance, max flagged meters, date
 - [ ] Tools: `get_forecast`, `search_tours`, `analyze_route`, `reroute`, `plan_route`, capped at about 8 calls per request
+- [ ] Pass the user's `avoid_at_or_above` to `analyze_route` and `reroute`, so "nothing flagged" means the same thing as on the map
 - [ ] Ids only: tour, trailhead and objective ids are enums in the schemas, and the model never outputs coordinates
 - [ ] Every candidate passes analysis in the same request and must meet the constraints to be called a match
 - [ ] Rank by constraint fit, then flagged meters, then distance from the user's wording

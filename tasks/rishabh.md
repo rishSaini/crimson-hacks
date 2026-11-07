@@ -13,11 +13,12 @@ Nothing is built yet. The API returns made-up fixture data.
 
 The forecast never blocks anyone: Karthik and Ali can use the fixtures until yours is live.
 
-## Rulings to make
+## Rulings made
 
-1. **What should Beginner mode say?** "Beginner mode: avoid all avalanche terrain" overstates what the app checks. It misses flat tracks under Low or Moderate slopes, slopes under 30 degrees, and runouts, and a reroute can leave steep terrain behind. Suggested: "Beginner mode: avoid all rated 30°+ terrain".
-2. **Should overhead exposure follow `avoid_at_or_above`?** Karthik needs this before building overhead exposure. See [karthik.md](karthik.md).
-3. **What should Beginner mode show on a route with nothing flagged?** Ali needs this before building the banner. See [ali.md](ali.md).
+1. **Beginner mode label:** "Beginner mode: stay off and out from under slopes 30° and steeper". Subtitle: "Checks slopes on your route and within 300 m uphill." Ali builds this: see [ali.md](ali.md).
+2. **Overhead exposure follows `avoid_at_or_above`,** and unrated always counts. More "no clean line" results in `low` mode are expected, and the fallback options handle them. Karthik builds this: see [karthik.md](karthik.md).
+3. **No UI exception for Beginner mode.** `POST /analyze` takes `avoid_at_or_above` (same enum, default `considerable`), `flagged` is computed server-side from it, and the primary Reroute button shows if and only if flagged is above 0. The UI sends the current setting with every `POST /analyze` and `POST /alternative` call. The models, fixtures and tests are updated, and the real logic is Karthik's.
+4. **"Avoid these too" applies to the current route only** and never changes the saved setting. After that reroute, the comparison card shows a text link, "Make this my default", which updates the saved setting only when tapped. Ali builds this.
 
 ## What others need from you
 
