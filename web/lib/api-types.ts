@@ -58,6 +58,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/endpoint-suggestions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Endpoint Suggestions */
+        post: operations["endpoint_suggestions_endpoint_suggestions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/plan": {
         parameters: {
             query?: never;
@@ -284,6 +301,87 @@ export interface components {
             /** Feature Count */
             feature_count: number;
         };
+        /** EndpointSuggestionsRequest */
+        EndpointSuggestionsRequest: {
+            /**
+             * Max Difficulty
+             * @description Highest OSM piste grade the user accepts
+             * @enum {string}
+             */
+            max_difficulty: "novice" | "easy" | "intermediate" | "advanced" | "expert" | "extreme";
+            /** Max Distance M */
+            max_distance_m: number;
+            /** Max Climb Ft */
+            max_climb_ft: number;
+            /**
+             * Endpoint Tolerance M
+             * @default 200
+             */
+            endpoint_tolerance_m: number;
+            /**
+             * Limit
+             * @default 3
+             */
+            limit: number;
+            /** Start */
+            start: [
+                number,
+                number
+            ];
+            /** Destination */
+            destination: [
+                number,
+                number
+            ];
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Avoid At Or Above
+             * @default considerable
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
+        };
+        /** EndpointSuggestionsResponse */
+        EndpointSuggestionsResponse: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "uac_live" | "demo_replay" | "fixture";
+            /**
+             * Avoid At Or Above
+             * @description The setting actually applied
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
+            /** Forced By Warning */
+            forced_by_warning: boolean;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "found" | "no_match";
+            /** Message */
+            message: string;
+            catalog: components["schemas"]["CatalogInfo"];
+            /** Excluded */
+            excluded: {
+                [key: string]: number;
+            };
+            /** Limitations */
+            limitations: string[];
+            /** Suggestions */
+            suggestions: components["schemas"]["MappedSuggestion"][];
+        };
         /**
          * FlaggedStretch
          * @description One banner entry and numbered pin. Every flagged run stays in `segments`.
@@ -404,6 +502,31 @@ export interface components {
                 number,
                 number
             ][];
+        };
+        /** MappedSuggestion */
+        MappedSuggestion: {
+            /** Id */
+            id: string;
+            /** Name */
+            name: string | null;
+            /**
+             * Difficulty
+             * @enum {string}
+             */
+            difficulty: "novice" | "easy" | "intermediate" | "advanced" | "expert" | "extreme";
+            /**
+             * Route Scope
+             * @constant
+             */
+            route_scope: "mapped_section";
+            /** Source Urls */
+            source_urls: string[];
+            route: components["schemas"]["LineString"];
+            analysis: components["schemas"]["AnalyzeResponse"];
+            /** Start Distance M */
+            start_distance_m: number;
+            /** End Distance M */
+            end_distance_m: number;
         };
         /** PlanRequest */
         PlanRequest: {
@@ -643,14 +766,34 @@ export interface components {
             source_urls: string[];
             route: components["schemas"]["LineString"];
             analysis: components["schemas"]["AnalyzeResponse"];
-            comparison: components["schemas"]["RouteComparison"];
             /** Start Distance M */
             start_distance_m: number;
             /** End Distance M */
             end_distance_m: number;
+            comparison: components["schemas"]["RouteComparison"];
         };
         /** SuggestionsRequest */
         SuggestionsRequest: {
+            /**
+             * Max Difficulty
+             * @description Highest OSM piste grade the user accepts
+             * @enum {string}
+             */
+            max_difficulty: "novice" | "easy" | "intermediate" | "advanced" | "expert" | "extreme";
+            /** Max Distance M */
+            max_distance_m: number;
+            /** Max Climb Ft */
+            max_climb_ft: number;
+            /**
+             * Endpoint Tolerance M
+             * @default 200
+             */
+            endpoint_tolerance_m: number;
+            /**
+             * Limit
+             * @default 3
+             */
+            limit: number;
             route: components["schemas"]["LineString"];
             /**
              * Date
@@ -665,30 +808,10 @@ export interface components {
              */
             avoid_at_or_above: "considerable" | "moderate" | "low";
             /**
-             * Max Difficulty
-             * @description Highest OSM piste grade the user accepts
-             * @enum {string}
-             */
-            max_difficulty: "novice" | "easy" | "intermediate" | "advanced" | "expert" | "extreme";
-            /** Max Distance M */
-            max_distance_m: number;
-            /** Max Climb Ft */
-            max_climb_ft: number;
-            /**
              * Corridor Width M
              * @default 400
              */
             corridor_width_m: number;
-            /**
-             * Endpoint Tolerance M
-             * @default 200
-             */
-            endpoint_tolerance_m: number;
-            /**
-             * Limit
-             * @default 3
-             */
-            limit: number;
         };
         /** SuggestionsResponse */
         SuggestionsResponse: {
@@ -718,15 +841,15 @@ export interface components {
             /** Message */
             message: string;
             catalog: components["schemas"]["CatalogInfo"];
-            original_analysis: components["schemas"]["AnalyzeResponse"];
-            /** Suggestions */
-            suggestions: components["schemas"]["SuggestedRoute"][];
             /** Excluded */
             excluded: {
                 [key: string]: number;
             };
             /** Limitations */
             limitations: string[];
+            original_analysis: components["schemas"]["AnalyzeResponse"];
+            /** Suggestions */
+            suggestions: components["schemas"]["SuggestedRoute"][];
         };
         /** ValidationError */
         ValidationError: {
@@ -835,6 +958,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SuggestionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    endpoint_suggestions_endpoint_suggestions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EndpointSuggestionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EndpointSuggestionsResponse"];
                 };
             };
             /** @description Validation Error */

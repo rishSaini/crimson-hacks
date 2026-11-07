@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { ApiCheck } from "@/components/ApiCheck";
 import { MapView } from "@/components/MapView";
@@ -41,6 +42,9 @@ export function RouteWorkspace() {
         </MapView>
       </div>
       <aside className="space-y-4 overflow-y-auto border-t p-4 md:w-96 md:border-t-0 md:border-l">
+        <Link className="block text-sm font-medium underline" href="/preview">
+          Open route preview
+        </Link>
         <div role="group" aria-label="Route mode" className="inline-flex rounded border text-sm">
           {(["draw", "plan"] as const).map((option) => (
             <button

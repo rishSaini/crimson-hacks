@@ -1,0 +1,15 @@
+{
+  "date": "2026-01-15",
+  "max_difficulty": "intermediate",
+  "max_distance_m": 5000,
+  "max_climb_ft": 3000,
+  "avoid_at_or_above": "considerable",
+  "start": [
+    -111.6815343,
+    40.5758692
+  ],
+  "destination": [
+    -111.6816731,
+    40.5753617
+  ]
+}
