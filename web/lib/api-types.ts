@@ -119,9 +119,15 @@ export interface components {
             corridor_width_m: number;
             /**
              * Avoid At Or Above
+             * @description The setting actually applied
              * @enum {string}
              */
             avoid_at_or_above: "considerable" | "moderate" | "low";
+            /**
+             * Forced By Warning
+             * @description An Avalanche Warning forced low for this forecast day
+             */
+            forced_by_warning: boolean;
             /** Message */
             message: string;
             alternative?: components["schemas"]["LineString"] | null;
@@ -164,9 +170,15 @@ export interface components {
             source: "uac_live" | "demo_replay" | "fixture";
             /**
              * Avoid At Or Above
+             * @description The setting actually applied
              * @enum {string}
              */
             avoid_at_or_above: "considerable" | "moderate" | "low";
+            /**
+             * Forced By Warning
+             * @description An Avalanche Warning forced low for this forecast day
+             */
+            forced_by_warning: boolean;
             segments: components["schemas"]["SegmentCollection"];
             totals: components["schemas"]["RouteTotals"];
         };
@@ -174,7 +186,10 @@ export interface components {
         AvalancheProblem: {
             /** Name */
             name: string;
-            /** Description */
+            /**
+             * Description
+             * @description UAC's words, verbatim
+             */
             description: string;
         };
         /** BriefingItem */
@@ -183,7 +198,10 @@ export interface components {
             segment_id: number;
             /** Avalanche Problem */
             avalanche_problem: string;
-            /** Note */
+            /**
+             * Note
+             * @description LLM output, so it must never call terrain safe
+             */
             note: string;
         };
         /** BriefingRequest */
@@ -210,6 +228,27 @@ export interface components {
             /** Items */
             items: components["schemas"]["BriefingItem"][];
         };
+        /**
+         * ForecastAlert
+         * @description UAC's alert for this forecast day. Text fields hold UAC's words, verbatim.
+         */
+        ForecastAlert: {
+            /**
+             * Level
+             * @enum {string}
+             */
+            level: "none" | "watch" | "warning" | "special_bulletin";
+            /** What */
+            what?: string | null;
+            /** Where */
+            where?: string | null;
+            /** What To Do */
+            what_to_do?: string | null;
+            /** Valid From */
+            valid_from?: string | null;
+            /** Valid To */
+            valid_to?: string | null;
+        };
         /** ForecastResponse */
         ForecastResponse: {
             /** Zone */
@@ -229,6 +268,7 @@ export interface components {
              * @enum {string}
              */
             overall_danger: "no_rating" | "low" | "moderate" | "considerable" | "high" | "extreme";
+            alert: components["schemas"]["ForecastAlert"];
             /**
              * Ratings Issued
              * @description False if all 24 rose values are 0: the UI shows the no-ratings banner
@@ -241,7 +281,10 @@ export interface components {
             rose: components["schemas"]["RoseCell"][];
             /** Problems */
             problems: components["schemas"]["AvalancheProblem"][];
-            /** Bottom Line */
+            /**
+             * Bottom Line
+             * @description UAC's words, verbatim
+             */
             bottom_line: string;
             /** Forecast Url */
             forecast_url: string;

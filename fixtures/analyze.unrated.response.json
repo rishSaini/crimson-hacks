@@ -175,5 +175,6 @@
     "flagged_length_m": 780,
     "flagged_stretch_count": 3,
     "max_flagged_danger": "no_rating"
-  }
+  },
+  "forced_by_warning": false
 }

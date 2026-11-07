@@ -209,5 +209,13 @@
     }
   ],
   "bottom_line": "FIXTURE TEXT, not a real forecast. Danger is Considerable on upper and mid-elevation slopes facing north through east.",
-  "forecast_url": "https://utahavalanchecenter.org/forecast/salt-lake"
+  "forecast_url": "https://utahavalanchecenter.org/forecast/salt-lake",
+  "alert": {
+    "level": "none",
+    "what": null,
+    "where": null,
+    "what_to_do": null,
+    "valid_from": null,
+    "valid_to": null
+  }
 }
