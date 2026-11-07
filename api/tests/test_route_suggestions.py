@@ -1,4 +1,6 @@
 """Check geometric matching, source grade filters, and forecast exposure limits."""
+import json
+
 import numpy as np
 import pytest
 from affine import Affine
@@ -8,8 +10,8 @@ from app import main
 from app.models import AnalyzeRequest, ForecastResponse, LineString
 from app.route_analysis import TO_UTM, TerrainCoverageError, TerrainGrids, analyze_route
 from app.route_suggestions import (
-    Catalog, CatalogFeature, CatalogProperties, SourceReference, SuggestionsRequest,
-    load_catalog, suggest_routes,
+    Catalog, CatalogFeature, CatalogProperties, EndpointSuggestionsRequest, SourceReference,
+    SuggestionsRequest, load_catalog, suggest_from_endpoints, suggest_routes,
 )
 
 
@@ -185,6 +187,50 @@ def test_missing_operating_status_is_excluded(grids, forecast):
     candidate.properties.status = None
     result = suggest_routes(request(forecast), forecast, grids, catalog(candidate))
     assert result.excluded == {'operating_status_unknown_or_closed': 1}
+
+
+def test_suggestions_reports_warning_threshold(grids):
+    replay = json.loads((main.FIXTURES_DIR / 'demo_days.json').read_text())['2026-02-18']
+    forecast = ForecastResponse.model_validate(replay)
+    result = suggest_routes(
+        request(forecast, avoid_at_or_above='considerable'),
+        forecast,
+        grids,
+        catalog(feature('flat')),
+    )
+    assert result.avoid_at_or_above == 'low'
+    assert result.original_analysis.forced_by_warning
+    assert result.suggestions[0].analysis.avoid_at_or_above == 'low'
+    assert result.suggestions[0].analysis.forced_by_warning
+
+
+def test_pins_use_catalog_geometry_instead_of_a_straight_connector(grids, forecast):
+    start, destination = route(start=60, end=140).coordinates
+    path = LineString(coordinates=[
+        start, *route(145, start=60, end=140).coordinates, destination,
+    ])
+    grids.elevation[100, 100] = np.nan  # The straight connector crosses missing data.
+    pins = EndpointSuggestionsRequest(
+        start=start, destination=destination, date=forecast.date,
+        max_difficulty='easy', max_distance_m=3000, max_climb_ft=1000,
+    )
+    result = suggest_from_endpoints(pins, forecast, grids, catalog(feature('bent', path)))
+    assert result.status == 'found'
+    assert result.suggestions[0].route == path
+    assert result.suggestions[0].analysis.totals.length_m == pytest.approx(1700)
+
+
+def test_endpoint_suggestions_rejects_coincident_pins(monkeypatch, grids, forecast):
+    monkeypatch.setattr(main, 'terrain_context', lambda date: (forecast, grids))
+    monkeypatch.setattr(main, 'load_catalog', lambda: catalog(feature('test')))
+    start = route().coordinates[0]
+    body = EndpointSuggestionsRequest(
+        start=start, destination=start, date=forecast.date,
+        max_difficulty='easy', max_distance_m=1000, max_climb_ft=1000,
+    )
+    response = TestClient(main.app).post('/endpoint-suggestions', json=body.model_dump(mode='json'))
+    assert response.status_code == 422
+    assert 'at least 1 m apart' in response.json()['detail']
 
 
 def test_suggestions_fixtures_match_contract():

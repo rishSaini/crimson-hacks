@@ -21,7 +21,8 @@ from app.models import (
 )
 from app.route_analysis import TerrainCoverageError, TerrainGrids, analyze_route, load_grids
 from app.route_suggestions import (
-    SuggestionsRequest, SuggestionsResponse, load_catalog, suggest_routes,
+    Catalog, EndpointSuggestionsRequest, EndpointSuggestionsResponse,
+    SuggestionsRequest, SuggestionsResponse, load_catalog, suggest_from_endpoints, suggest_routes,
 )
 
 FIXTURES_DIR = Path(__file__).resolve().parents[2] / "fixtures"
@@ -69,15 +70,27 @@ def terrain_context(date: Date) -> tuple[ForecastResponse, TerrainGrids]:
     return forecast, grids
 
 
+def route_catalog() -> Catalog:
+    try:
+        return load_catalog()
+    except (OSError, ValueError) as error:
+        raise HTTPException(503, "The route catalog is unavailable.") from error
+
+
 @app.post("/suggestions")
 def suggestions(request: SuggestionsRequest) -> SuggestionsResponse:
     forecast, grids = terrain_context(request.date)
     try:
-        catalog = load_catalog()
-    except (OSError, ValueError) as error:
-        raise HTTPException(503, "The route catalog is unavailable.") from error
+        return suggest_routes(request, forecast, grids, route_catalog())
+    except TerrainCoverageError as error:
+        raise HTTPException(422, str(error)) from error
+
+
+@app.post("/endpoint-suggestions")
+def endpoint_suggestions(request: EndpointSuggestionsRequest) -> EndpointSuggestionsResponse:
+    forecast, grids = terrain_context(request.date)
     try:
-        return suggest_routes(request, forecast, grids, catalog)
+        return suggest_from_endpoints(request, forecast, grids, route_catalog())
     except TerrainCoverageError as error:
         raise HTTPException(422, str(error)) from error
 
