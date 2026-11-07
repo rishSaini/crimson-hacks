@@ -24,6 +24,7 @@ from app.models import (
 )
 from app.route_analysis import TerrainCoverageError, TerrainGrids, analyze_route, load_grids
 from app.route_planning import plan_route
+from app.route_reroute import reroute
 from app.route_search import load_osm
 from app.route_suggestions import (
     Catalog, EndpointSuggestionsRequest, EndpointSuggestionsResponse,
@@ -124,7 +125,15 @@ def plan(request: PlanRequest) -> PlanResponse:
 
 @app.post("/alternative")
 def alternative(request: AlternativeRequest) -> AlternativeResponse:
-    return load_fixture("alternative.response.json", AlternativeResponse)
+    forecast, grids = terrain_context(request.date)
+    try:
+        osm = load_osm()
+    except (OSError, ValueError) as error:
+        raise HTTPException(503, "The trail and ski area data is unavailable.") from error
+    try:
+        return reroute(request, forecast, grids, osm)
+    except TerrainCoverageError as error:
+        raise HTTPException(422, str(error)) from error
 
 
 @app.post("/briefing")
