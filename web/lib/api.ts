@@ -36,8 +36,8 @@ export const api = {
   forecast: (date?: string) =>
     request<ForecastResponse>(date ? `/forecast?date=${date}` : "/forecast"),
   analyze: (body: AnalyzeRequest) => request<AnalyzeResponse>("/analyze", body),
-  alternative: (body: AlternativeRequest) =>
-    request<AlternativeResponse>("/alternative", body),
+  alternative: (body: AlternativeRequest, signal?: AbortSignal) =>
+    request<AlternativeResponse>("/alternative", body, signal),
   suggestions: (body: SuggestionsRequest) =>
     request<SuggestionsResponse>("/suggestions", body),
   endpointSuggestions: (body: EndpointSuggestionsRequest) =>

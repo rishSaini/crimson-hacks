@@ -1,6 +1,6 @@
 # Fixtures
 
-Example requests and responses for each endpoint. The API stubs return the `*.response.json` files, except `POST /analyze` and `POST /suggestions`, which now compute real results.
+Example requests and responses for each endpoint. The API stubs return the `*.response.json` files, except `POST /analyze`, `POST /alternative`, `POST /plan` and the suggestion endpoints, which compute real results. The `alternative.*` files are made-up examples of each state.
 
 **This is made-up data for building the UI. It is not a real forecast, and the route's colors don't reflect the real terrain under it.** Every response carries `"source": "fixture"` so the UI can say so.
 

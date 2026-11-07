@@ -309,6 +309,9 @@ class AlternativeResponse(ApiModel):
     )
     message: str
     alternative: LineString | None = None
+    analysis: AnalyzeResponse | None = Field(
+        default=None, description="The /analyze result for alternative, so the UI can color it"
+    )
     comparison: RouteComparison | None = None
     fallbacks: list[FallbackOption] = Field(default_factory=list)
     turnaround_point: Position | None = None

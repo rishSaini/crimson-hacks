@@ -185,6 +185,8 @@ export interface components {
             /** Message */
             message: string;
             alternative?: components["schemas"]["LineString"] | null;
+            /** @description The /analyze result for alternative, so the UI can color it */
+            analysis?: components["schemas"]["AnalyzeResponse"] | null;
             comparison?: components["schemas"]["RouteComparison"] | null;
             /** Fallbacks */
             fallbacks?: ("widen_corridor" | "turnaround_point" | "nearby_tours" | "least_exposure_line")[];

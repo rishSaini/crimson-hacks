@@ -70,7 +70,7 @@ def test_get_forecast_returns_fixture():
 
 @pytest.mark.parametrize(
     "path, name",
-    [("/alternative", "alternative"), ("/briefing", "briefing")],
+    [("/briefing", "briefing")],
 )
 def test_post_endpoint_returns_fixture(path, name):
     response = client.post(path, json=fixture(f"{name}.request.json"))
@@ -227,7 +227,7 @@ def test_analyze_accepts_only_the_three_thresholds(threshold, status):
 
 
 ALTERNATIVE_BODY = {
-    "route": {"type": "LineString", "coordinates": [[-111.6, 40.6], [-111.7, 40.5]]},
+    "route": {"type": "LineString", "coordinates": [[-111.72, 40.572], [-111.71, 40.574]]},
     "date": "2026-01-15",
 }
 
