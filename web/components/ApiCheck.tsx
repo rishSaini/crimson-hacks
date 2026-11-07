@@ -17,7 +17,11 @@ const SAMPLE_DATE = "2026-01-15";
 
 async function runChecks(): Promise<Check[]> {
   const forecast = await api.forecast(SAMPLE_DATE);
-  const analysis = await api.analyze({ route: SAMPLE_ROUTE, date: SAMPLE_DATE });
+  const analysis = await api.analyze({
+    route: SAMPLE_ROUTE,
+    date: SAMPLE_DATE,
+    avoid_at_or_above: "considerable",
+  });
   const alternative = await api.alternative({
     route: SAMPLE_ROUTE,
     date: SAMPLE_DATE,

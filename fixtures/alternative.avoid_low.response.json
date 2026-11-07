@@ -4,7 +4,7 @@
   "status": "found",
   "corridor_width_m": 400,
   "avoid_at_or_above": "low",
-  "message": "This line avoids 310 m of the steep terrain on your route, and 140 m remains. It does not remove avalanche risk.",
+  "message": "This line avoids 640 m of the flagged terrain on your route, and 140 m remains. It does not remove avalanche risk.",
   "alternative": {
     "type": "LineString",
     "coordinates": [
@@ -51,7 +51,7 @@
     ]
   },
   "comparison": {
-    "original_flagged_m": 450,
+    "original_flagged_m": 780,
     "alternative_flagged_m": 140,
     "added_distance_m": 1100,
     "added_climb_ft": 180,

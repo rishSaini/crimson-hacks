@@ -18,23 +18,33 @@ DangerLevel = Literal["no_rating", "low", "moderate", "considerable", "high", "e
 # magenta line with a "?" pin. No rating is not low danger, so it counts as flagged.
 RouteColor = Literal["gray", "unrated", "green", "yellow", "orange", "red", "black"]
 
-# For 30 degree terrain, each color has exactly one danger and flag state.
-STEEP_COLOR_RULES: dict[str, tuple[str, bool]] = {
-    "unrated": ("no_rating", True),
-    "green": ("low", False),
-    "yellow": ("moderate", False),
-    "orange": ("considerable", True),
-    "red": ("high", True),
-    "black": ("extreme", True),
+# For 30 degree terrain, each color has exactly one danger.
+STEEP_COLOR_DANGER: dict[str, str] = {
+    "unrated": "no_rating",
+    "green": "low",
+    "yellow": "moderate",
+    "orange": "considerable",
+    "red": "high",
+    "black": "extreme",
 }
+
+# Flagged at every avoid_at_or_above setting. Green and yellow depend on the setting.
+ALWAYS_FLAGGED_COLORS = {"unrated", "orange", "red", "black"}
 
 # Shown in the UI so stub or replayed data can never pass for today's forecast.
 DataSource = Literal["uac_live", "demo_replay", "fixture"]
 
 FlagReason = Literal["steep_terrain", "unrated_terrain", "overhead_exposure"]
 
-# The lowest rating a reroute avoids. Unrated 30 degree terrain is always avoided.
+# The lowest rating that gets flagged and avoided. Unrated 30 degree terrain always is.
 AvoidThreshold = Literal["considerable", "moderate", "low"]
+
+_ALWAYS_FLAGGED_DANGERS = {"no_rating", "considerable", "high", "extreme"}
+FLAGGED_DANGERS: dict[str, set[str]] = {
+    "considerable": _ALWAYS_FLAGGED_DANGERS,
+    "moderate": _ALWAYS_FLAGGED_DANGERS | {"moderate"},
+    "low": _ALWAYS_FLAGGED_DANGERS | {"moderate", "low"},
+}
 FallbackOption = Literal[
     "widen_corridor", "turnaround_point", "nearby_tours", "least_exposure_line"
 ]
@@ -100,6 +110,10 @@ class ForecastResponse(ApiModel):
 class AnalyzeRequest(ApiModel):
     route: LineString
     date: Date
+    avoid_at_or_above: AvoidThreshold = Field(
+        default="considerable",
+        description="Lowest rating to flag. Unrated 30 degree terrain is always flagged",
+    )
 
 
 class SegmentProperties(ApiModel):
@@ -114,8 +128,8 @@ class SegmentProperties(ApiModel):
     color: RouteColor
     flagged: bool = Field(
         description=(
-            "Reroute target: 30 degrees or more that is rated Considerable or higher "
-            "or unrated, or overhead exposure"
+            "Reroute target under avoid_at_or_above: 30 degrees or more at or above that "
+            "rating or unrated, or overhead exposure from such a slope"
         )
     )
     flag_reason: FlagReason | None = None
@@ -127,8 +141,13 @@ class SegmentProperties(ApiModel):
         if self.color == "gray":
             if self.flagged and self.flag_reason != "overhead_exposure":
                 raise ValueError("a gray segment can only be flagged for overhead exposure")
-        elif (self.danger, self.flagged) != STEEP_COLOR_RULES[self.color]:
-            raise ValueError(f"danger and flagged don't match color {self.color}")
+        else:
+            if self.danger != STEEP_COLOR_DANGER[self.color]:
+                raise ValueError(f"danger doesn't match color {self.color}")
+            if self.color in ALWAYS_FLAGGED_COLORS and not self.flagged:
+                raise ValueError(f"{self.color} segments are flagged at every setting")
+            if self.flagged and self.color != "unrated" and self.flag_reason != "steep_terrain":
+                raise ValueError("a rated steep segment is flagged for steep_terrain")
         if (self.color == "unrated") != (self.flag_reason == "unrated_terrain"):
             raise ValueError("unrated_terrain is the flag reason for unrated segments only")
         return self
@@ -165,8 +184,21 @@ class RouteTotals(ApiModel):
 class AnalyzeResponse(ApiModel):
     date: Date
     source: DataSource
+    avoid_at_or_above: AvoidThreshold
     segments: SegmentCollection
     totals: RouteTotals
+
+    @model_validator(mode="after")
+    def flags_match_setting(self) -> "AnalyzeResponse":
+        flagged_dangers = FLAGGED_DANGERS[self.avoid_at_or_above]
+        for feature in self.segments.features:
+            segment = feature.properties
+            if segment.color != "gray" and segment.flagged != (segment.danger in flagged_dangers):
+                raise ValueError(
+                    f"segment {segment.id} flag doesn't match avoid_at_or_above "
+                    f"{self.avoid_at_or_above}"
+                )
+        return self
 
 
 # --- POST /alternative -------------------------------------------------------

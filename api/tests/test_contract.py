@@ -45,6 +45,8 @@ def fixture(name: str):
         ("analyze.low_only.response.json", AnalyzeResponse),
         ("analyze.moderate_only.response.json", AnalyzeResponse),
         ("analyze.low_moderate.response.json", AnalyzeResponse),
+        ("analyze.avoid_low.request.json", AnalyzeRequest),
+        ("analyze.avoid_low.response.json", AnalyzeResponse),
         ("alternative.avoid_low.request.json", AlternativeRequest),
         ("alternative.avoid_low.response.json", AlternativeResponse),
         ("forecast.response.json", ForecastResponse),
@@ -124,15 +126,75 @@ def test_unrated_segment_counts_as_flagged():
         SegmentProperties.model_validate(unrated_segment(flagged=False, flag_reason=None))
 
 
-def test_moderate_segment_is_listed_but_not_flagged():
-    moderate = {"danger": "moderate", "color": "yellow"}
-    SegmentProperties.model_validate(
-        unrated_segment(**moderate, flagged=False, flag_reason=None)
-    )
+def test_considerable_segment_is_flagged_at_every_setting():
     with pytest.raises(ValidationError):
         SegmentProperties.model_validate(
-            unrated_segment(**moderate, flag_reason="steep_terrain")
+            unrated_segment(
+                danger="considerable", color="orange", flagged=False, flag_reason=None
+            )
         )
+
+
+def with_yellow_flag(body: dict, flagged: bool) -> dict:
+    for feature in body["segments"]["features"]:
+        segment = feature["properties"]
+        if segment["color"] == "yellow":
+            segment["flagged"] = flagged
+            segment["flag_reason"] = "steep_terrain" if flagged else None
+    return body
+
+
+@pytest.mark.parametrize(
+    "setting, flagged, valid",
+    [
+        ("considerable", False, True),
+        ("considerable", True, False),
+        ("moderate", True, True),
+        ("moderate", False, False),
+    ],
+)
+def test_moderate_segment_is_flagged_only_at_moderate_or_low(setting, flagged, valid):
+    body = with_yellow_flag(fixture("analyze.moderate_only.response.json"), flagged)
+    body["avoid_at_or_above"] = setting
+    if valid:
+        AnalyzeResponse.model_validate(body)
+    else:
+        with pytest.raises(ValidationError):
+            AnalyzeResponse.model_validate(body)
+
+
+def test_same_route_flags_more_at_low():
+    default = fixture("analyze.low_moderate.response.json")
+    low = fixture("analyze.avoid_low.response.json")
+    assert default["segments"]["features"][0]["geometry"] == low["segments"]["features"][0]["geometry"]
+    assert default["avoid_at_or_above"] == "considerable"
+    assert default["totals"]["flagged_stretch_count"] == 0
+    assert low["avoid_at_or_above"] == "low"
+    assert low["totals"]["flagged_stretch_count"] > 0
+
+
+def test_low_setting_flags_overhead_exposure_from_rated_slopes():
+    segments = fixture("analyze.avoid_low.response.json")["segments"]["features"]
+    reasons = [feature["properties"]["flag_reason"] for feature in segments]
+    assert "overhead_exposure" in reasons
+
+
+def test_analyze_avoid_at_or_above_defaults_to_considerable():
+    request = AnalyzeRequest.model_validate(
+        {
+            "route": {"type": "LineString", "coordinates": [[-111.6, 40.6], [-111.7, 40.5]]},
+            "date": "2026-01-15",
+        }
+    )
+    assert request.avoid_at_or_above == "considerable"
+
+
+@pytest.mark.parametrize(
+    "threshold, status", [("considerable", 200), ("moderate", 200), ("low", 200), ("high", 422)]
+)
+def test_analyze_accepts_only_the_three_thresholds(threshold, status):
+    body = {**fixture("analyze.request.json"), "avoid_at_or_above": threshold}
+    assert client.post("/analyze", json=body).status_code == status
 
 
 ALTERNATIVE_BODY = {
@@ -190,6 +252,7 @@ def test_unflagged_fixtures_name_the_ratings_present(name, ratings):
         "analyze.low_only.response.json",
         "analyze.moderate_only.response.json",
         "analyze.low_moderate.response.json",
+        "analyze.avoid_low.response.json",
     ],
 )
 def test_analyze_fixture_totals_match_segments(name):
