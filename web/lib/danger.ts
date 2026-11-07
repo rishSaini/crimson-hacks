@@ -1,84 +1,131 @@
-import type { Segment } from "@/lib/analysis";
-import type { ForecastResponse } from "@/lib/api";
+import type { ForecastResponse } from "./api";
 
 export type Danger = ForecastResponse["overall_danger"];
-export type RoseCell = ForecastResponse["rose"][number];
-export type Band = RoseCell["band"];
-export type Aspect = RoseCell["aspect"];
+export type Source = ForecastResponse["source"];
+export type AlertLevel = ForecastResponse["alert"]["level"];
 
-export const DANGER_LABEL: Record<Danger, string> = {
-  no_rating: "No rating",
-  low: "Low",
-  moderate: "Moderate",
-  considerable: "Considerable",
-  high: "High",
-  extreme: "Extreme",
+/** North American Public Avalanche Danger Scale colors, as UAC uses them. */
+export const DANGER: Record<Danger, { label: string; level: number | null; fill: string; text: string }> = {
+  no_rating: { label: "No rating", level: null, fill: "#64748b", text: "#ffffff" },
+  low: { label: "Low", level: 1, fill: "#50b848", text: "#0b2a09" },
+  moderate: { label: "Moderate", level: 2, fill: "#fff200", text: "#2b2900" },
+  considerable: { label: "Considerable", level: 3, fill: "#f7941e", text: "#2e1600" },
+  high: { label: "High", level: 4, fill: "#ed1c24", text: "#ffffff" },
+  extreme: { label: "Extreme", level: 5, fill: "#231f20", text: "#ffffff" },
 };
 
-/** North American Avalanche Danger Scale colors, as UAC uses them. */
-export const DANGER_HEX: Record<Danger, string> = {
-  no_rating: "#d4d4d4",
-  low: "#50b848",
-  moderate: "#fff200",
-  considerable: "#f7941e",
-  high: "#ed1c24",
-  extreme: "#231f20",
+export const SOURCE: Record<Source, { label: string; tone: "live" | "replay" | "fixture" }> = {
+  uac_live: { label: "Live UAC forecast", tone: "live" },
+  demo_replay: { label: "Replayed past forecast", tone: "replay" },
+  fixture: { label: "Sample data, not a real forecast", tone: "fixture" },
 };
 
-/** Text color that reads on each danger fill. */
-export const DANGER_TEXT: Record<Danger, string> = {
-  no_rating: "#171717",
-  low: "#ffffff",
-  moderate: "#171717",
-  considerable: "#171717",
-  high: "#ffffff",
-  extreme: "#ffffff",
+export const ALERT_TITLE: Record<Exclude<AlertLevel, "none">, string> = {
+  watch: "Avalanche Watch",
+  warning: "Avalanche Warning",
+  special_bulletin: "Special Avalanche Bulletin",
 };
 
-/** Octant order of the rose: index = 8 * band + octant, N clockwise to NW. */
-export const ASPECTS: Aspect[] = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
-
-/** Band order of the rose, with the elevation ranges from CLAUDE.md. */
-export const BANDS: { band: Band; label: string; range: string }[] = [
-  { band: "upper", label: "Upper elevation", range: "above 9,500 ft" },
-  { band: "mid", label: "Mid elevation", range: "8,000 to 9,500 ft" },
-  { band: "lower", label: "Lower elevation", range: "below 8,000 ft" },
-];
-
-/** "Considerable", or "Pockets of Considerable" for odd raw values. */
-export function cellRating(cell: RoseCell): string {
-  if (cell.danger === "no_rating") return "No rating";
-  return cell.pockets ? `Pockets of ${DANGER_LABEL[cell.danger]}` : DANGER_LABEL[cell.danger];
+/** "2026-02-21" as "Sat, Feb 21, 2026", without timezone drift. */
+export function formatDay(isoDate: string, opts: { weekday?: boolean } = {}) {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    weekday: opts.weekday ? "short" : undefined,
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
-const ft = (n: number) => Math.round(n).toLocaleString("en-US");
-const m = (n: number) => Math.round(n).toLocaleString("en-US");
-
-function aspectList(aspects: readonly Aspect[]): string {
-  if (aspects.length <= 1) return aspects.join("");
-  return `${aspects.slice(0, -1).join(", ")} and ${aspects[aspects.length - 1]}`;
+export function formatDateTime(iso: string) {
+  return new Date(iso).toLocaleString("en-US", {
+    timeZone: "America/Denver",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
 }
 
-/** A segment is listed if it's 30° or steeper, or flagged for what's above it. */
-export function isListedSegment(segment: Segment): boolean {
-  const p = segment.properties;
-  return p.color !== "gray" || p.flag_reason === "overhead_exposure";
-}
+/** Route colors from the analysis, drawn in the legend exactly as the map will draw them. */
+export const ROUTE_KEY = [
+  { label: "Under 30°: no avalanche-terrain flag", color: "#94a3b8", thin: true },
+  { label: "30°+, rated Low", color: DANGER.low.fill },
+  { label: "30°+, rated Moderate", color: DANGER.moderate.fill },
+  { label: "30°+, rated Considerable", color: DANGER.considerable.fill },
+  { label: "30°+, rated High", color: DANGER.high.fill },
+  { label: "30°+, rated Extreme", color: DANGER.extreme.fill, edge: true },
+  { label: "30°+ with no rating", color: "#e11d9b", dashed: true },
+] as const;
 
 /**
- * One line per listed segment, from the server's numbers only. Never calls terrain
- * "safe": under 30° with nothing above it isn't listed at all.
+ * Color-blind palette: a light-to-dark ramp, so levels stay apart by lightness for red-green
+ * color blindness, with blue and yellow as the two lightest steps. Display only: the data and
+ * UAC's forecast are unchanged, and the UI says the standard scale is UAC's.
  */
-export function describeSegment(segment: Segment): string {
-  const p = segment.properties;
-  const where = `${ft(p.elevation_min_ft)} to ${ft(p.elevation_max_ft)} ft`;
-  const slope = `${p.slope_min_deg}°–${p.slope_max_deg}°`;
+const CB_DANGER: Record<Danger, { fill: string; text: string }> = {
+  no_rating: { fill: "#64748b", text: "#ffffff" },
+  low: { fill: "#8fd3fe", text: "#06283d" },
+  moderate: { fill: "#f6d55c", text: "#2b2300" },
+  considerable: { fill: "#e07b39", text: "#2a1200" },
+  high: { fill: "#a4243b", text: "#ffffff" },
+  extreme: { fill: "#161616", text: "#ffffff" },
+};
 
-  if (p.color === "gray") {
-    return `Segment ${p.id}: ${m(p.length_m)} m on ${slope} slopes, ${where}, below slopes 30° and steeper. Flagged for overhead exposure.`;
+/** The danger style to draw, in the standard or the color-blind palette. */
+export function dangerStyle(danger: Danger, colorBlind: boolean) {
+  return colorBlind ? { ...DANGER[danger], ...CB_DANGER[danger] } : DANGER[danger];
+}
+
+/** Map colors for each analysis `color`, shared by the map line, legend and profile. */
+export function routeColors(colorBlind: boolean): Record<string, string> {
+  const d = (k: Danger) => dangerStyle(k, colorBlind).fill;
+  return {
+    gray: "#7b8794",
+    unrated: "#e11d9b",
+    green: d("low"),
+    yellow: d("moderate"),
+    orange: d("considerable"),
+    red: d("high"),
+    black: d("extreme"),
+  };
+}
+
+type Totals = {
+  flagged_stretch_count: number;
+  flagged_length_m: number;
+  steep_stretch_count: number;
+  steep_length_m: number;
+  steep_ratings: string[];
+};
+
+/** The route summary in the API's words (route_planning.found_message), for lines the client re-rates. */
+export function routeMessage(totals: Totals): string {
+  if (totals.flagged_stretch_count > 0) {
+    const count = totals.flagged_stretch_count;
+    const noun = count === 1 ? "stretch crosses" : "stretches cross";
+    return `${count} ${noun} flagged terrain (${Math.round(totals.flagged_length_m)} m).`;
   }
+  if (totals.steep_stretch_count > 0) {
+    const count = totals.steep_stretch_count;
+    const noun = count === 1 ? "stretch" : "stretches";
+    const ratings = totals.steep_ratings.map((r) => r[0].toUpperCase() + r.slice(1)).join(" to ");
+    return `${count} ${noun} in avalanche terrain, rated ${ratings} today (${Math.round(totals.steep_length_m)} m). Not rerouted by default.`;
+  }
+  return "No flags found on this route today.";
+}
 
-  const head = `Segment ${p.id}: ${m(p.length_m)} m on ${slope} ${aspectList(p.aspects)} slopes, ${where}.`;
-  if (p.danger === "no_rating") return `${head} No danger rating issued for it today.`;
-  return `${head} Rated ${DANGER_LABEL[p.danger]} today.`;
+type FlagReason = "steep_terrain" | "unrated_terrain" | "overhead_exposure";
+
+/**
+ * Why a flagged stretch is flagged. A stretch flagged only for overhead exposure sits on
+ * gentle ground below steep slopes, so its rating is the slope above, not the route.
+ */
+export function stretchKind(reasons: (FlagReason | null | undefined)[]): "overhead" | "unrated" | "mixed" | "rated" {
+  const set = new Set(reasons.filter(Boolean));
+  if (set.size > 0 && [...set].every((r) => r === "overhead_exposure")) return "overhead";
+  if (set.has("unrated_terrain")) return set.size === 1 ? "unrated" : "mixed";
+  return "rated";
 }

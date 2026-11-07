@@ -9,6 +9,9 @@ import {
   type PlanRequest,
   type PlanResponse,
 } from "@/lib/api";
+import { useStoredChoice } from "@/lib/useDisplayPrefs";
+
+const SETTINGS = ["considerable", "moderate", "low"] as const;
 
 export type LngLat = [number, number];
 export type AvoidSetting = NonNullable<PlanRequest["avoid_at_or_above"]>;
@@ -32,16 +35,25 @@ function message(error: unknown): string {
 export function useRoutePlanner() {
   const [points, setPoints] = useState<LngLat[]>([]);
   const [date, setDate] = useState<string>(DEMO_DAYS[0].date);
-  const [setting, setSetting] = useState<AvoidSetting>("considerable");
+  // The saved default, remembered per browser. Changing it re-rates the route.
+  const [setting, setSetting] = useStoredChoice<AvoidSetting>("redrun:avoid", "considerable", SETTINGS);
   const [corridor, setCorridor] = useState(400);
   const [planning, setPlanning] = useState(false);
   const [plan, setPlan] = useState<PlanResponse | null>(null);
   const [accepted, setAccepted] = useState<AnalyzeResponse | null>(null);
+  // An accepted "Avoid these too" line was flagged at this stricter level, for this route only.
+  const [acceptedOverride, setAcceptedOverride] = useState<AvoidSetting | null>(null);
   const [planError, setPlanError] = useState("");
   const [reroute, setReroute] = useState<RerouteState>({ status: "idle" });
-  const [forecast, setForecast] = useState<ForecastResponse | null>(null);
+  // Keyed by date, so a day switch never shows the previous day's forecast or alert.
+  const [loadedForecast, setLoadedForecast] = useState<
+    { date: string; forecast: ForecastResponse | null } | null
+  >(null);
   const pointsRef = useRef(points);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // "Make this my default" saves the setting without re-planning the line on screen.
+  const skipReplan = useRef(false);
+  const stale = useRef(false);
   const inFlight = useRef<AbortController | null>(null);
 
   const cancel = useCallback(() => {
@@ -66,6 +78,8 @@ export function useRoutePlanner() {
     setPlanError("");
     setReroute({ status: "idle" });
     setAccepted(null);
+    setAcceptedOverride(null);
+    stale.current = false;
     try {
       const result = await api.plan(
         { start: from, end: to, date, avoid_at_or_above: setting },
@@ -83,6 +97,11 @@ export function useRoutePlanner() {
 
   // A new day or setting re-rates the route. The date and setting are in runPlan's identity.
   useEffect(() => {
+    if (skipReplan.current) {
+      skipReplan.current = false;
+      stale.current = true;
+      return;
+    }
     timer.current = setTimeout(() => void runPlan(), 0);
     return cancel;
   }, [cancel, runPlan]);
@@ -90,8 +109,8 @@ export function useRoutePlanner() {
   useEffect(() => {
     let current = true;
     api.forecast(date).then(
-      (loaded) => { if (current) setForecast(loaded); },
-      () => { if (current) setForecast(null); },
+      (loaded) => { if (current) setLoadedForecast({ date, forecast: loaded }); },
+      () => { if (current) setLoadedForecast({ date, forecast: null }); },
     );
     return () => { current = false; };
   }, [date]);
@@ -107,6 +126,7 @@ export function useRoutePlanner() {
       cancel();
       setPlan(null);
       setAccepted(null);
+      setAcceptedOverride(null);
       setPlanError("");
       setPlanning(false);
       setReroute({ status: "idle" });
@@ -122,6 +142,8 @@ export function useRoutePlanner() {
   const dropPoint = useCallback((index: number, point: LngLat) => {
     movePoint(index, point);
     cancel();
+    // Pending from the drop, so Reroute can't run on (and cancel) the line being replaced.
+    if (pointsRef.current.length >= 2) setPlanning(true);
     timer.current = setTimeout(() => void runPlan(), REPLAN_DELAY_MS);
   }, [cancel, movePoint, runPlan]);
 
@@ -131,8 +153,11 @@ export function useRoutePlanner() {
       index === 0 ? feature.geometry.coordinates : feature.geometry.coordinates.slice(1))
     : plan?.route?.coordinates ?? null;
 
+  // The level the line on screen was flagged at: an accepted override, else the saved setting.
+  const effectiveSetting = acceptedOverride ?? setting;
+
   const runReroute = useCallback(async (
-    width: number, avoid: AvoidSetting = setting, override: AvoidSetting | null = null,
+    width: number, avoid: AvoidSetting = effectiveSetting, override: AvoidSetting | null = acceptedOverride,
   ) => {
     if (!baseLine) return;
     const controller = start();
@@ -151,16 +176,29 @@ export function useRoutePlanner() {
     } catch (error) {
       if (!controller.signal.aborted) setReroute({ status: "error", message: message(error) });
     }
-  }, [baseLine, date, setting, start]);
+  }, [acceptedOverride, baseLine, date, effectiveSetting, start]);
 
-  const undoReroute = useCallback(() => setReroute({ status: "idle" }), []);
+  const undoReroute = useCallback(() => {
+    setReroute({ status: "idle" });
+    // The default changed while the card was open, so the original line needs re-rating.
+    if (stale.current) void runPlan();
+  }, [runPlan]);
 
   const acceptReroute = useCallback(() => {
     if (reroute.status === "done" && reroute.result.analysis) {
       setAccepted(reroute.result.analysis);
+      setAcceptedOverride(reroute.override);
       setReroute({ status: "idle" });
+      stale.current = false;
     }
   }, [reroute]);
+
+  /** Saves `value` as the default without re-planning the line on screen. */
+  const makeDefault = useCallback((value: AvoidSetting) => {
+    if (value === setting) return;
+    skipReplan.current = true;
+    setSetting(value);
+  }, [setSetting, setting]);
 
   const alternative = reroute.status === "done" && reroute.result.status === "found"
     ? reroute.result : null;
@@ -172,12 +210,17 @@ export function useRoutePlanner() {
     setDate,
     setting,
     setSetting,
+    makeDefault,
+    /** The level the line on screen is flagged at (an accepted "Avoid these too" can be stricter). */
+    effectiveSetting,
     corridor,
     setCorridor,
     planning,
     plan,
     planError,
-    forecast,
+    forecast: loadedForecast?.date === date ? loadedForecast.forecast : null,
+    /** True once the forecast for this day failed to load. */
+    forecastFailed: loadedForecast?.date === date && loadedForecast.forecast === null,
     reroute,
     current,
     alternative,

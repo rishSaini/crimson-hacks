@@ -26,3 +26,13 @@ The results document skill use and placement. They do not measure the effect of 
 3. Check the result against the event rules and judging criteria and record whether the skill helped.
 
 This list links to the skills for review.
+
+## Installed UI skill
+
+The route preview uses [frontend-design-review](../.agents/skills/frontend-design-review/SKILL.md).
+The skill is stored in `.agents/skills/frontend-design-review/` for local agent use.
+It came from the [SkillPatch package](https://skillpatch.dev/skill/frontend-design-review) on 2026-11-06.
+The package keeps its original acknowledgments.
+
+The preview uses a light map and a compact route panel.
+The review checks clear actions, keyboard focus, mobile layout, source labels, and playback controls.

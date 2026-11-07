@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject, type CSSProperties } from "react";
 import { LngLat, type CameraOptions, type Map as TerrainMap } from "maplibre-gl";
 import type { MapRef } from "react-map-gl/maplibre";
+import { PreviewIcon } from "@/components/PreviewIcon";
+import styles from "./RoutePreview.module.css";
+
+export type PreviewTarget = "selection" | "match" | "source";
 
 type Position = [number, number];
 type Path = { points: Position[]; distances: number[]; length: number };
@@ -10,8 +14,16 @@ type Path = { points: Position[]; distances: number[]; length: number };
 function buildPath(points: Position[]): Path {
   const distances = [0];
   for (let i = 1; i < points.length; i++) {
-    distances.push(distances[i - 1] + new LngLat(...points[i - 1]).distanceTo(new LngLat(...points[i])));
+    const [a, b] = [points[i - 1], points[i]];
+    const radians = Math.PI / 180;
+    const halfLat = Math.sin((b[1] - a[1]) * radians / 2);
+    const halfLng = Math.sin((b[0] - a[0]) * radians / 2);
+    const h = Math.min(1, halfLat ** 2 + Math.cos(a[1] * radians) * Math.cos(b[1] * radians) * halfLng ** 2);
+    const segment = 6371008.8 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+    distances.push(distances[i - 1] + segment);
   }
+  // Keep the range endpoint identical during server rendering and browser hydration.
+  distances[distances.length - 1] = Math.round(distances[distances.length - 1] * 1000) / 1000;
   return { points, distances, length: distances[distances.length - 1] };
 }
 
@@ -25,7 +37,6 @@ function positionAt(path: Path, distance: number): Position {
   ];
 }
 
-const BUTTON = "rounded border border-slate-500 px-3 py-1.5 text-xs hover:bg-slate-700 disabled:opacity-40";
 const BASE_SPEED_MPS = 8;
 
 function formatTime(seconds: number): string {
@@ -33,11 +44,18 @@ function formatTime(seconds: number): string {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 
-export function RouteRide({ mapRef, lines, name, ready }: {
+export function RouteRide({ mapRef, lines, name, ready, previewTarget, previewOptions, previewNote, emptyMessage,
+  onPreviewChange, onActiveChange }: {
   mapRef: RefObject<MapRef | null>;
   lines: Position[][];
   name: string;
   ready: boolean;
+  previewTarget: PreviewTarget;
+  previewOptions: { value: PreviewTarget; label: string }[];
+  previewNote: string;
+  emptyMessage: string;
+  onPreviewChange: (target: PreviewTarget) => void;
+  onActiveChange?: (active: boolean) => void;
 }) {
   const paths = useMemo(() => lines.filter((line) => line.length >= 2).map(buildPath).filter((path) => path.length > 1), [lines]);
   const [section, setSection] = useState(0);
@@ -58,6 +76,11 @@ export function RouteRide({ mapRef, lines, name, ready }: {
     imageryVisibility: "visible" | "none";
   } | null>(null);
   const path = paths[section];
+
+  useEffect(() => {
+    onActiveChange?.(active);
+    return () => onActiveChange?.(false);
+  }, [active, onActiveChange]);
 
   function pause() {
     generation.current++;
@@ -217,75 +240,82 @@ export function RouteRide({ mapRef, lines, name, ready }: {
     void play(false);
   }
 
-  if (!path) return null;
-  const totalSeconds = Math.ceil(path.length / BASE_SPEED_MPS);
-  const elapsedSeconds = progress >= path.length ? totalSeconds : progress / BASE_SPEED_MPS;
-  const startLabel = progress >= path.length ? "Replay" : progress > 0 ? "Resume" : "Start";
+  const length = path?.length ?? 0;
+  const totalSeconds = Math.ceil(length / BASE_SPEED_MPS);
+  const elapsedSeconds = progress >= length ? totalSeconds : progress / BASE_SPEED_MPS;
+  const startLabel = length > 0 && progress >= length ? "Replay" : progress > 0 ? "Resume" : "Start";
   return (
-    <div className="absolute bottom-10 left-3 z-10 w-[calc(100%-1.5rem)] max-w-lg rounded-lg border border-slate-600 bg-slate-950/95 p-3 text-white shadow-xl">
-      <p className="text-sm font-semibold">POV demo · {name}</p>
-      <p className="mt-1 text-xs text-slate-300">Terrain simulation · target eye height 1.7 m above the elevation model</p>
-      {paths.length > 1 && (
-        <label className="mt-2 block text-xs">Continuous section
-          <select className="ml-2 rounded border border-slate-600 bg-slate-900 p-1" value={section}
-            onChange={(event) => {
-              exit();
-              setSection(Number(event.target.value));
-              distance.current = 0;
-              setProgress(0);
-              setJumpTime("0:00");
-              setMessage("");
-            }}>
-            {paths.map((item, index) => <option key={index} value={index}>{index + 1} · {Math.round(item.length)} m</option>)}
-          </select>
-        </label>
-      )}
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <button type="button" disabled={!ready || preparing || playing} onClick={() => void play()} className={BUTTON}>
-          {preparing ? "Loading terrain…" : startLabel}
-        </button>
-        <button type="button" disabled={!playing && !preparing} onClick={pause} className={BUTTON}>Pause</button>
-        <button type="button" disabled={!active && !preparing && progress === 0} onClick={stop} className={BUTTON}>Stop</button>
-        <button type="button" disabled={!active && !preparing} onClick={exit} className={BUTTON}>Map overview</button>
+    <section className={styles.ride} data-active={active} data-preview-target={previewTarget} aria-label="Terrain playback">
+      <div className={styles.rideHeading}>
+        <p className={styles.eyebrow}><PreviewIcon name="mountain" size={16} />Route preview</p>
+        <span className={styles.rideStatus}>{preparing ? "Loading terrain" : playing ? "Playing" : active ? "Paused" : "Terrain simulation"}</span>
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <button type="button" disabled={speed <= 1} onClick={() => changeSpeed(speed - 1)} className={BUTTON}>Slower</button>
-        <label className="text-xs">Playback speed
-          <select className="ml-1 rounded bg-slate-800 p-1" value={speed}
-            onChange={(event) => changeSpeed(Number(event.target.value))}>
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((value) => <option key={value} value={value}>{value}×</option>)}
-          </select>
-        </label>
-        <button type="button" disabled={speed >= 10} onClick={() => changeSpeed(speed + 1)} className={BUTTON}>Faster</button>
-      </div>
-      <p className="mt-1 text-xs text-slate-300">Simulated time · 1× = 8 m/s</p>
-      <label className="mt-2 flex items-center gap-2 text-xs">
-        <span className="whitespace-nowrap">{formatTime(elapsedSeconds)} / {formatTime(totalSeconds)}</span>
-        <input className="min-w-0 flex-1" aria-label="POV progress" type="range" min={0} max={path.length} step="any" value={progress}
-          disabled={!ready}
-          aria-valuetext={`${formatTime(elapsedSeconds)}, ${Math.round(progress)} meters`}
-          onChange={(event) => seek(Number(event.target.value))} />
+      <h2>{name}</h2>
+      <label className={styles.previewPicker}>Preview route
+        <select value={previewTarget} onChange={(event) => {
+          stop();
+          onPreviewChange(event.target.value as PreviewTarget);
+        }}>{previewOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select>
       </label>
-      <form className="mt-2 flex flex-wrap items-center gap-2 text-xs" onSubmit={(event) => {
-        event.preventDefault();
-        const match = /^(\d+):([0-5]\d)$/.exec(jumpTime.trim());
-        const seconds = match ? Number(match[1]) * 60 + Number(match[2]) : NaN;
-        if (!Number.isFinite(seconds) || seconds > totalSeconds) {
-          setMessage(`Enter a time from 0:00 to ${formatTime(totalSeconds)} using m:ss.`);
-          return;
-        }
-        seek(seconds * BASE_SPEED_MPS);
-      }}>
-        <label>Jump to time
-          <input className="ml-2 w-20 rounded border border-slate-600 bg-slate-900 px-2 py-1"
-            value={jumpTime} onChange={(event) => setJumpTime(event.target.value)} placeholder="m:ss" />
-        </label>
-        <button type="submit" disabled={!ready} className={BUTTON}>Go to time</button>
-        <span className="text-slate-300">{Math.round(progress)} / {Math.round(path.length)} m</span>
-      </form>
-      <p className="mt-1 text-xs text-amber-200" role="status">
-        {message || "Playback follows this section only. Snow cover and obstacles remain unverified."}
-      </p>
-    </div>
+      <p className={styles.previewNote}>{path ? previewNote : emptyMessage}</p>
+      {paths.length > 1 && <label className={styles.sectionPicker}>Continuous section
+        <select value={section} disabled={preparing} onChange={(event) => {
+          exit();
+          setSection(Number(event.target.value));
+          distance.current = 0;
+          setProgress(0);
+          setJumpTime("0:00");
+          setMessage("");
+        }}>{paths.map((item, index) => <option key={index} value={index}>{index + 1} of {paths.length} · {(item.length / 1000).toFixed(2)} km</option>)}</select>
+      </label>}
+      <div className={styles.transport}>
+        {playing || preparing
+          ? <button type="button" onClick={pause} className={styles.playButton}><PreviewIcon name="pause" size={17} />Pause</button>
+          : <button type="button" disabled={!ready || !path} onClick={() => void play()} className={styles.playButton}>
+            <PreviewIcon name="play" size={17} />{startLabel}</button>}
+        <button type="button" disabled={!active && !preparing && progress === 0} onClick={stop} className={styles.rideButton}>
+          <PreviewIcon name="stop" size={14} />Stop</button>
+        <div className={styles.speedControls}>
+          <button type="button" aria-label="Slower" disabled={speed <= 1} onClick={() => changeSpeed(speed - 1)}><PreviewIcon name="minus" size={14} /></button>
+          <label><span className={styles.srOnly}>Playback speed</span>
+            <select value={speed} onChange={(event) => changeSpeed(Number(event.target.value))}>
+              {Array.from({ length: 10 }, (_, i) => i + 1).map((value) => <option key={value} value={value}>{value}×</option>)}
+            </select>
+          </label>
+          <button type="button" aria-label="Faster" disabled={speed >= 10} onClick={() => changeSpeed(speed + 1)}><PreviewIcon name="plus" size={14} /></button>
+        </div>
+      </div>
+      <div className={styles.playbackDetails} hidden={!path}>
+        <div className={styles.timeline}>
+          <input aria-label="POV progress" type="range" min={0} max={length} step="any" value={progress} disabled={!ready || !path}
+            aria-valuetext={`${formatTime(elapsedSeconds)}, ${Math.round(progress)} meters`}
+            style={{ "--progress": `${length > 0 ? progress / length * 100 : 0}%` } as CSSProperties}
+            onChange={(event) => seek(Number(event.target.value))} />
+          <div><span>{formatTime(elapsedSeconds)} <span>/ {formatTime(totalSeconds)}</span></span>
+            <span>{Math.round(progress).toLocaleString()} / {Math.round(length).toLocaleString()} m</span></div>
+        </div>
+        <div className={styles.rideFooter}>
+          <span>Simulated time · 1× = 8 m/s</span>
+          <button type="button" disabled={!active && !preparing} onClick={exit}>Map overview <PreviewIcon name="arrow" size={13} /></button>
+        </div>
+        <details className={`${styles.details} ${styles.seekDetails}`}>
+          <summary>Jump to a time <PreviewIcon name="chevron" size={14} /></summary>
+          <form className={styles.seekForm} onSubmit={(event) => {
+            event.preventDefault();
+            const match = /^(\d+):([0-5]\d)$/.exec(jumpTime.trim());
+            const seconds = match ? Number(match[1]) * 60 + Number(match[2]) : NaN;
+            if (!Number.isFinite(seconds) || seconds > totalSeconds) {
+              setMessage(`Enter a time from 0:00 to ${formatTime(totalSeconds)} using m:ss.`);
+              return;
+            }
+            seek(seconds * BASE_SPEED_MPS);
+          }}>
+            <label>Jump to time<input value={jumpTime} onChange={(event) => setJumpTime(event.target.value)} placeholder="m:ss" /></label>
+            <button type="submit" disabled={!ready || !path} className={styles.rideButton}>Go to time <PreviewIcon name="arrow" size={14} /></button>
+          </form>
+        </details>
+      </div>
+      <p className={styles.rideNote} role="status">{message || "Elevation model · 1.7 m eye height. Snow and obstacles are unverified."}</p>
+    </section>
   );
 }
