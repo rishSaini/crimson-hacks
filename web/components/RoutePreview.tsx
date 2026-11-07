@@ -5,6 +5,7 @@ import Map, { Layer, Marker, NavigationControl, ScaleControl, Source, type MapRe
 import { setWorkerUrl, type StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { api, type EndpointSuggestionsResponse, type SuggestionsRequest, type SuggestionsResponse } from "@/lib/api";
+import { RouteRide } from "@/components/RouteRide";
 
 setWorkerUrl(new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).toString());
 
@@ -26,6 +27,7 @@ export type PreviewSample = {
 
 const MAP_STYLE: StyleSpecification = {
   version: 8,
+  sky: { "sky-color": "#b5d9f0", "horizon-color": "#edf4f8" },
   sources: {
     topo: {
       type: "raster",
@@ -40,8 +42,18 @@ const MAP_STYLE: StyleSpecification = {
       encoding: "terrarium",
       attribution: "© Mapterhorn",
     },
+    imagery: {
+      type: "raster",
+      tiles: ["https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}"],
+      tileSize: 256,
+      maxzoom: 16,
+      attribution: "USDA, USGS The National Map imagery",
+    },
   },
-  layers: [{ id: "topographic-map", type: "raster", source: "topo" }],
+  layers: [
+    { id: "topographic-map", type: "raster", source: "topo" },
+    { id: "satellite-map", type: "raster", source: "imagery", layout: { visibility: "none" } },
+  ],
 };
 
 const GRADES = ["novice", "easy", "intermediate", "advanced", "expert", "extreme"] as const;
@@ -221,6 +233,13 @@ export function RoutePreview({ samples, demo, matchSketch }: {
             </Source>
           )}
         </Map>
+        <RouteRide
+          key={suggestion?.id ?? sample.id}
+          mapRef={map}
+          lines={suggestion ? [suggestion.route.coordinates] : sample.lines}
+          name={suggestion?.name ?? sample.name}
+          ready={mapReady}
+        />
         <div className="pointer-events-none absolute left-3 top-3 max-w-[70%] rounded-lg bg-slate-950/90 p-3 text-xs shadow-lg">
           <p className="font-semibold">Little Cottonwood Canyon</p>
           {!mapReady && <p className="mt-1">Loading terrain map…</p>}
