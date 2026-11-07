@@ -106,9 +106,12 @@ class ForecastAlert(ApiModel):
 
     @model_validator(mode="after")
     def details_match_level(self) -> "ForecastAlert":
-        details = [self.what, self.where, self.what_to_do, self.valid_from, self.valid_to]
+        details = [self.what, self.where, self.valid_from, self.valid_to]
+        # UAC's special bulletins have no "What to do" section, and we don't invent one.
+        if self.level != "special_bulletin":
+            details.append(self.what_to_do)
         if self.level == "none":
-            if any(detail is not None for detail in details):
+            if any(detail is not None for detail in [*details, self.what_to_do]):
                 raise ValueError("level 'none' must not carry alert details")
         elif any(detail is None for detail in details):
             raise ValueError(f"level '{self.level}' needs all of its alert details")

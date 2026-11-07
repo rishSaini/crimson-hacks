@@ -425,6 +425,20 @@ def test_alert_needs_all_details(level):
         ForecastAlert(level=level, what="Something")
 
 
+def test_special_bulletin_does_not_need_what_to_do():
+    details = {
+        "what": "Something",
+        "where": "Somewhere",
+        "valid_from": "2026-02-20T06:00:00-07:00",
+        "valid_to": "2026-02-23T06:00:00-07:00",
+    }
+    assert ForecastAlert(level="special_bulletin", **details).what_to_do is None
+    with pytest.raises(ValidationError):
+        ForecastAlert(level="warning", **details)
+    with pytest.raises(ValidationError):
+        ForecastAlert(level="watch", **details)
+
+
 def test_forecast_requires_an_alert():
     body = fixture("forecast.response.json")
     del body["alert"]
