@@ -22,7 +22,7 @@ from app.models import (
     SegmentFeature,
     SegmentProperties,
 )
-from app.terrain import aspect_octant, is_reroute_target, rose_value
+from app.terrain import aspect_octant, is_reroute_target, rose_value, worst_rating
 
 GRID_DIR = Path(__file__).resolve().parents[2] / "data" / "grids"
 METERS_TO_FEET = 1 / 0.3048
@@ -103,7 +103,6 @@ class TerrainGrids:
         slopes = self.slope[window]
         if slopes.shape != (3, 3) or not np.isfinite(slopes).all():
             raise TerrainCoverageError("The slope grid has incomplete data for part of the route.")
-        # Rate the aspect of the cell that supplied the slope. Prefer the center on ties.
         steepest = (1, 1)
         if slopes[steepest] < slopes.max():
             steepest = np.unravel_index(slopes.argmax(), slopes.shape)
@@ -112,7 +111,17 @@ class TerrainGrids:
         if not np.isfinite(aspect):
             raise TerrainCoverageError("The aspect grid has no data for part of the route.")
         octant = aspect_octant(float(aspect))
-        level = (rose_value(rose, elevation, octant) + 1) // 2 if slope >= 30 else None
+        level = None
+        if slope >= 30:
+            # A window can straddle a ridge, so take the worst rating among its steep cells.
+            steep_aspects = self.aspect[window][slopes >= 30]
+            if not np.isfinite(steep_aspects).all():
+                raise TerrainCoverageError("The aspect grid has no data for part of the route.")
+            octants = [aspect_octant(float(value)) for value in steep_aspects]
+            values = [rose_value(rose, elevation, value) for value in octants]
+            worst = worst_rating(values)
+            level = (worst + 1) // 2
+            octant = octants[values.index(worst)]
         overhead = self.overhead_level(x, y, rose, threshold) if level is None else None
         return TerrainSample(slope, elevation, octant, level, overhead)
 
