@@ -92,3 +92,40 @@ export function routeColors(colorBlind: boolean): Record<string, string> {
     black: d("extreme"),
   };
 }
+
+type Totals = {
+  flagged_stretch_count: number;
+  flagged_length_m: number;
+  steep_stretch_count: number;
+  steep_length_m: number;
+  steep_ratings: string[];
+};
+
+/** The route summary in the API's words (route_planning.found_message), for lines the client re-rates. */
+export function routeMessage(totals: Totals): string {
+  if (totals.flagged_stretch_count > 0) {
+    const count = totals.flagged_stretch_count;
+    const noun = count === 1 ? "stretch crosses" : "stretches cross";
+    return `${count} ${noun} flagged terrain (${Math.round(totals.flagged_length_m)} m).`;
+  }
+  if (totals.steep_stretch_count > 0) {
+    const count = totals.steep_stretch_count;
+    const noun = count === 1 ? "stretch" : "stretches";
+    const ratings = totals.steep_ratings.map((r) => r[0].toUpperCase() + r.slice(1)).join(" to ");
+    return `${count} ${noun} in avalanche terrain, rated ${ratings} today (${Math.round(totals.steep_length_m)} m). Not rerouted by default.`;
+  }
+  return "No flags found on this route today.";
+}
+
+type FlagReason = "steep_terrain" | "unrated_terrain" | "overhead_exposure";
+
+/**
+ * Why a flagged stretch is flagged. A stretch flagged only for overhead exposure sits on
+ * gentle ground below steep slopes, so its rating is the slope above, not the route.
+ */
+export function stretchKind(reasons: (FlagReason | null | undefined)[]): "overhead" | "unrated" | "mixed" | "rated" {
+  const set = new Set(reasons.filter(Boolean));
+  if (set.size > 0 && [...set].every((r) => r === "overhead_exposure")) return "overhead";
+  if (set.has("unrated_terrain")) return set.size === 1 ? "unrated" : "mixed";
+  return "rated";
+}

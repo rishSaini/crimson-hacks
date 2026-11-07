@@ -53,7 +53,7 @@ export function RouteProfile({ analysis, onFocus }: {
           ? `${Math.round(active.properties.length_m).toLocaleString()} m · ${Math.round(active.properties.slope_min_deg)}–${Math.round(active.properties.slope_max_deg)}° ${active.properties.aspects.join("/")}`
           : "Elevation range of each segment"}</span>
       </figcaption>
-      <svg viewBox={`0 0 ${W} ${H}`} className={styles.profileChart} role="img"
+      <svg viewBox={`0 0 ${W} ${H}`} className={styles.profileChart} role="group"
         aria-label={`Route profile, ${Math.round(lo).toLocaleString()} to ${Math.round(hi).toLocaleString()} ft over ${(total / 1000).toFixed(1)} km`}
         onMouseLeave={() => setHover(null)}>
         {[0.25, 0.5, 0.75].map((t) => (
@@ -66,8 +66,15 @@ export function RouteProfile({ analysis, onFocus }: {
           const color = colors[f.properties.color] ?? colors.gray;
           return (
             <g key={f.properties.id} className={styles.profileBar} data-dim={hover !== null && hover !== i}
-              onMouseEnter={() => setHover(i)}
-              onClick={() => onFocus?.(f.geometry.coordinates as Position[])}>
+              role="button" tabIndex={0} aria-label={`Segment ${f.properties.id}: ${rating(f)}, ${Math.round(f.properties.length_m)} m. Show on map.`}
+              onMouseEnter={() => setHover(i)} onFocus={() => setHover(i)} onBlur={() => setHover(null)}
+              onClick={() => onFocus?.(f.geometry.coordinates as Position[])}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  onFocus?.(f.geometry.coordinates as Position[]);
+                }
+              }}>
               <rect x={x0} y={PAD.top} width={Math.max(x1 - x0, 1)} height={H - PAD.top - PAD.bottom} fill="transparent" />
               <rect x={x0 + 0.5} y={top} width={Math.max(x1 - x0 - 1, 1.5)} height={height} rx={1.5} fill={color}
                 stroke={f.properties.color === "black" ? "#fff" : "none"} strokeWidth={1}

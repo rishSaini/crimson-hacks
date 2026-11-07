@@ -52,3 +52,11 @@ export function useDisplayPrefs() {
   const toggleColorBlind = useCallback(() => write(CB_KEY, colorBlind ? "0" : "1"), [colorBlind]);
   return { dark, colorBlind, toggleDark, toggleColorBlind };
 }
+
+/** A string setting remembered per browser, limited to `allowed` values. */
+export function useStoredChoice<T extends string>(key: string, fallback: T, allowed: readonly T[]) {
+  const raw = useSyncExternalStore(subscribe, () => get(key), () => null);
+  const value = raw !== null && (allowed as readonly string[]).includes(raw) ? (raw as T) : fallback;
+  const set = useCallback((next: T) => write(key, next), [key]);
+  return [value, set] as const;
+}

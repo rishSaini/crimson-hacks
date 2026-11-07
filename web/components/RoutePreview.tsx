@@ -88,6 +88,15 @@ const MAP_STYLE: StyleSpecification = {
   ],
 };
 
+/** Pads a short segment to about 400 m across, so focusing it keeps the valley in view. */
+function withMinimumExtent(points: Position[], halfSpanDeg = 0.0022): Position[] {
+  if (!points.length) return points;
+  const lngs = points.map((p) => p[0]);
+  const lats = points.map((p) => p[1]);
+  const [cx, cy] = [(Math.min(...lngs) + Math.max(...lngs)) / 2, (Math.min(...lats) + Math.max(...lats)) / 2];
+  return [...points, [cx - halfSpanDeg * 1.3, cy - halfSpanDeg], [cx + halfSpanDeg * 1.3, cy + halfSpanDeg]];
+}
+
 /** Recolors the basemap for light or dark mode without reloading the style (terrain stays on). */
 function applyMapTheme(map: MapLibreMap, dark: boolean) {
   const set = (layer: string, prop: Parameters<MapLibreMap["setPaintProperty"]>[1], value: string | number) => {
@@ -322,14 +331,19 @@ export function RoutePreview({ samples, demo, matchSketch }: {
       {alert && showAlert && <AlertStrip key={alert.date} alert={alert.alert} forecastUrl={alert.forecast_url} />}
       <section ref={mapSection} aria-label="Route map" aria-describedby="map-keyboard-help" className={styles.map}
         onKeyDown={(event) => {
-          if (event.key !== "Enter" || !(event.target instanceof HTMLCanvasElement) || !drawing) return;
+          if (event.key !== "Enter" || !(event.target instanceof HTMLCanvasElement)) return;
           const center = map.current?.getCenter();
-          if (center) {
+          if (!center) return;
+          // Plan a route works by keyboard too: Enter drops A, then B, at the map center.
+          if (tool === "plan" && !rideActive) {
+            event.preventDefault();
+            planner.placePoint([center.lng, center.lat]);
+          } else if (drawing) {
             event.preventDefault();
             placePoint([center.lng, center.lat]);
           }
         }}>
-        <p id="map-keyboard-help" className={styles.srOnly}>Use arrow keys to move the map. During selection, press Enter to place a point at the map center.</p>
+        <p id="map-keyboard-help" className={styles.srOnly}>Use arrow keys to move the map. Press Enter to place a route point at the map center.</p>
         <Map
           ref={map}
           mapStyle={MAP_STYLE}
@@ -342,6 +356,9 @@ export function RoutePreview({ samples, demo, matchSketch }: {
             setMapReady(true);
           }}
           onClick={(event) => {
+            // Markers live inside the map container, so their clicks reach here too. Only the
+            // map surface places points; clicking a pin must not start a new route.
+            if (!(event.originalEvent.target instanceof HTMLCanvasElement)) return;
             const point: Position = [event.lngLat.lng, event.lngLat.lat];
             if (tool === "plan") {
               if (!rideActive) planner.placePoint(point);
@@ -467,7 +484,7 @@ export function RoutePreview({ samples, demo, matchSketch }: {
               </button>
             ))}
           </div>
-          {tool === "plan" ? <PlannerPanel planner={planner} onFocus={(points) => frame(points)} /> : <>
+          {tool === "plan" ? <PlannerPanel planner={planner} locked={rideActive} onFocus={(points) => frame(withMinimumExtent(points))} /> : <>
           <p className={styles.intro}>Choose two points. Find mapped ski sections that match your level.</p>
           <form id="route-planner-form" onSubmit={findSuggestions} className={styles.routeForm}>
             <div className={styles.segmented} aria-label="Route selection method">

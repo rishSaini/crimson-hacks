@@ -1,7 +1,7 @@
 "use client";
 
 import { Layer, Marker, Source } from "react-map-gl/maplibre";
-import { dangerStyle, routeColors } from "@/lib/danger";
+import { dangerStyle, routeColors, stretchKind } from "@/lib/danger";
 import { useDisplayPrefs } from "@/lib/useDisplayPrefs";
 import type { RoutePlanner } from "@/lib/useRoutePlanner";
 import styles from "./Planner.module.css";
@@ -31,6 +31,7 @@ function legend(colorBlind: boolean) {
     { label: "High", color: c.red },
     { label: "Extreme", color: c.black, edge: true },
     { label: "Unrated 30°+", color: UNRATED, dashed: true },
+    { label: "Below steep slopes", color: GRAY, overhead: true },
   ];
 }
 
@@ -42,7 +43,7 @@ export function PlanLegend() {
       {legend(colorBlind).map((item) => (
         <span key={item.label}>
           <i
-            className={`${styles.legendLine} ${"thin" in item ? styles.legendThin : ""} ${"dashed" in item ? styles.legendDashed : ""} ${"edge" in item ? styles.legendEdge : ""}`}
+            className={`${styles.legendLine} ${"thin" in item ? styles.legendThin : ""} ${"dashed" in item ? styles.legendDashed : ""} ${"edge" in item ? styles.legendEdge : ""} ${"overhead" in item ? styles.legendOverhead : ""}`}
             style={{ background: item.color }}
           />
           {item.label}
@@ -90,14 +91,25 @@ export function PlannerLayers({ planner }: { planner: RoutePlanner }) {
         </Source>
       )}
       {activeAnalysis?.flagged_stretches.map((stretch) => {
+        const runs = activeAnalysis.segments.features.filter((f) => stretch.segment_ids.includes(f.properties.id));
+        const kind = stretchKind(runs.map((f) => f.properties.flag_reason));
         const unrated = stretch.max_danger === "no_rating";
         const d = dangerStyle(stretch.max_danger, colorBlind);
+        const fill = unrated ? UNRATED : d.fill;
         return (
           <Marker key={stretch.id} longitude={stretch.pin[0]} latitude={stretch.pin[1]}>
-            <span data-testid="stretch-pin" className={styles.stretchMarker}
-              style={{ background: unrated ? UNRATED : d.fill, color: unrated ? "#fff" : d.text }}>
-              {unrated ? "?" : stretch.id}
-            </span>
+            {kind === "overhead" ? (
+              // Overhead: gentle ground below steep slopes. Hollow pin ringed in the slope's rating.
+              <span data-testid="stretch-pin" className={`${styles.stretchMarker} ${styles.stretchMarkerOverhead}`}
+                style={{ borderColor: fill }} title="Below steep slopes that face the route">
+                {stretch.id}
+              </span>
+            ) : (
+              <span data-testid="stretch-pin" className={styles.stretchMarker}
+                style={{ background: fill, color: unrated ? "#fff" : d.text }}>
+                {kind === "unrated" ? "?" : stretch.id}
+              </span>
+            )}
           </Marker>
         );
       })}
