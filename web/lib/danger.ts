@@ -129,3 +129,42 @@ export function stretchKind(reasons: (FlagReason | null | undefined)[]): "overhe
   if (set.has("unrated_terrain")) return set.size === 1 ? "unrated" : "mixed";
   return "rated";
 }
+
+// Compatibility exports for legacy UI components
+export const DANGER_HEX: Record<Danger, string> = {
+  extreme: DANGER.extreme.fill,
+  high: DANGER.high.fill,
+  considerable: DANGER.considerable.fill,
+  moderate: DANGER.moderate.fill,
+  low: DANGER.low.fill,
+  no_rating: DANGER.no_rating.fill,
+};
+
+export const DANGER_LABEL: Record<Danger, string> = {
+  extreme: DANGER.extreme.label,
+  high: DANGER.high.label,
+  considerable: DANGER.considerable.label,
+  moderate: DANGER.moderate.label,
+  low: DANGER.low.label,
+  no_rating: DANGER.no_rating.label,
+};
+
+export const DANGER_TEXT: Record<Danger, string> = {
+  extreme: DANGER.extreme.text,
+  high: DANGER.high.text,
+  considerable: DANGER.considerable.text,
+  moderate: DANGER.moderate.text,
+  low: DANGER.low.text,
+  no_rating: DANGER.no_rating.text,
+};
+
+export function isListedSegment(seg: any): boolean {
+  return Boolean(seg?.properties?.flagged || seg?.properties?.slope >= 30);
+}
+
+export function describeSegment(seg: any): string {
+  const p = seg?.properties || {};
+  if (p.flag_reason === "overhead") return "Overhead hazard";
+  if (p.slope) return `${Math.round(p.slope)}° slope`;
+  return p.danger ? DANGER_LABEL[p.danger as Danger] : "Standard terrain";
+}
