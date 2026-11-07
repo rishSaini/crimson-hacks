@@ -1,5 +1,5 @@
-import { RouteWorkspace } from "@/components/RouteWorkspace";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return <RouteWorkspace />;
+  redirect("/preview");
 }
