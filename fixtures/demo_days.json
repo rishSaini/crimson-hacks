@@ -1,0 +1,227 @@
+{
+  "2026-02-18": {
+    "zone": "salt-lake",
+    "date": "2026-02-18",
+    "source": "demo_replay",
+    "overall_danger": "high",
+    "alert": {
+      "level": "warning",
+      "what": "The avalanche danger for the warning area is rising to HIGH today.",
+      "where": "The mountains of Northern, Central, and Southwestern Utah, as well as Southeastern Idaho.",
+      "what_to_do": "Avoid all avalanche terrain. Stay off of and out from under slopes steeper than 30°. Carry and know how to use avalanche rescue equipment. Find safer riding conditions on slopes less than 30° with no overhead hazard",
+      "valid_from": "2026-02-18T06:00:00-07:00",
+      "valid_to": "2026-02-19T06:00:00-07:00"
+    },
+    "ratings_issued": true,
+    "rose": [
+      {
+        "index": 0,
+        "band": "upper",
+        "aspect": "N",
+        "value": 8,
+        "danger": "high",
+        "pockets": false
+      },
+      {
+        "index": 1,
+        "band": "upper",
+        "aspect": "NE",
+        "value": 8,
+        "danger": "high",
+        "pockets": false
+      },
+      {
+        "index": 2,
+        "band": "upper",
+        "aspect": "E",
+        "value": 8,
+        "danger": "high",
+        "pockets": false
+      },
+      {
+        "index": 3,
+        "band": "upper",
+        "aspect": "SE",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 4,
+        "band": "upper",
+        "aspect": "S",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 5,
+        "band": "upper",
+        "aspect": "SW",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 6,
+        "band": "upper",
+        "aspect": "W",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 7,
+        "band": "upper",
+        "aspect": "NW",
+        "value": 8,
+        "danger": "high",
+        "pockets": false
+      },
+      {
+        "index": 8,
+        "band": "mid",
+        "aspect": "N",
+        "value": 8,
+        "danger": "high",
+        "pockets": false
+      },
+      {
+        "index": 9,
+        "band": "mid",
+        "aspect": "NE",
+        "value": 8,
+        "danger": "high",
+        "pockets": false
+      },
+      {
+        "index": 10,
+        "band": "mid",
+        "aspect": "E",
+        "value": 8,
+        "danger": "high",
+        "pockets": false
+      },
+      {
+        "index": 11,
+        "band": "mid",
+        "aspect": "SE",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 12,
+        "band": "mid",
+        "aspect": "S",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 13,
+        "band": "mid",
+        "aspect": "SW",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 14,
+        "band": "mid",
+        "aspect": "W",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 15,
+        "band": "mid",
+        "aspect": "NW",
+        "value": 8,
+        "danger": "high",
+        "pockets": false
+      },
+      {
+        "index": 16,
+        "band": "lower",
+        "aspect": "N",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 17,
+        "band": "lower",
+        "aspect": "NE",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 18,
+        "band": "lower",
+        "aspect": "E",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      },
+      {
+        "index": 19,
+        "band": "lower",
+        "aspect": "SE",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 20,
+        "band": "lower",
+        "aspect": "S",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 21,
+        "band": "lower",
+        "aspect": "SW",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 22,
+        "band": "lower",
+        "aspect": "W",
+        "value": 4,
+        "danger": "moderate",
+        "pockets": false
+      },
+      {
+        "index": 23,
+        "band": "lower",
+        "aspect": "NW",
+        "value": 6,
+        "danger": "considerable",
+        "pockets": false
+      }
+    ],
+    "problems": [
+      {
+        "name": "Wind Drifted Snow",
+        "description": "Storm totals are pushing 20\" of snow this morning, with the potential for up to 25\" more by sunset. This is all being blown in on moderate to strong winds, shifting from primarily the W/SW to NW later today.\n\nYou will be able to find slabs more than 3' deep on all aspects at high elevations, and on exposed mid-elevation slopes facing SE-N-NW. These will be most common near ridgelines, and on mid-slope catchment features such as gullies and convex rolls. Be on the lookout for drifts, dunes, pillows, and wind-textured surfaces as these are signs the wind has been at work. If the snow beneath your feet starts to sound hollow, like styrofoam, this is a sign you may have found a slab.\n\nThese will have the potential to break/propagate wider than expected, and possibly be triggered from a distance (remote triggering) as they may be built atop the weak snow...more on that below."
+      },
+      {
+        "name": "Persistent Weak Layer",
+        "description": "The Dry January Layer (DJL) that was created in our January dry spell can be found on upper and mid-elevation W-N-E facing slope. The DJL has close to 20\" sitting on it this morning in non-wind-loaded areas, with the potential for up to 25\" more by sunset.\n\nWhopping slabs are building on top of the very weak DJL. This strong over weak structure is VERY LIKELY to produce large, destructive avalanches big enough to bury and kill a person, and potentially damage a car, by the end of the day. Expect these to be able to propagate widely, and potentially be triggered from a distance away (remote-triggering). If you're considering “safe” travel on a ridgeline, be aware that you may be a hazard to those below you if you trigger (or remote trigger) a slide on the slopes adjacent to you, especially in a busy area. Be aware of who and what is above and below you today. Find safer riding conditions on slopes less than 30° with no overhead hazard.\n\nAs the storm carries on, expect these to increase in size and likelihood. Wind-loaded slopes mentioned above are most suspect.\n\n\n\nThe DJL is evident in the gray stripe shown in the photo below from Days Fork on Sunday."
+      },
+      {
+        "name": "New Snow",
+        "description": "On slopes and features protected from the wind, natural avalanches of new snow will become LIKELY, and human-triggered avalanches VERY LIKELY. These will looks one of two ways:\n\nStorm slabs: denser, new snow will run on top of, and possibly into, the weak old snow. Be aware of triggering one of these into a terrain trap at mid and lower elevations, such as road cuts, creeks, and gullies. Cracking along the snow surface is a sign that you found a slab.\nLoose dry sluffs: unconsolidated, dry new snow will run far and fast. At their smallest, these will be able to knock you off your feet, and at their largest, bury a person. They will be most common on steeper slopes, especially where more graupel has fallen."
+      }
+    ],
+    "bottom_line": "Avalanche danger will rise to HIGH on mid- and upper-elevation slopes facing E-N-NW. It is possible to trigger avalanches more than 3 feet deep on a buried persistent weak layer (PWL) on mid- and upper-elevation slopes facing W-N-E. These slides can break hundreds of feet wide, and can be triggered from a distance. The continuing storm will create wind slabs and new snow avalanches.\n\nThe recommendation for today is simple: as we approach HIGH danger, avoid all avalanche terrain.\n\nStick to slopes less than 30 degrees.\nStay well away from slopes connected to or below anything steeper than 30 degrees.\nBe aware of who is above and below you.",
+    "forecast_url": "https://utahavalanchecenter.org/forecast/salt-lake/2/18/2026"
+  }
+}

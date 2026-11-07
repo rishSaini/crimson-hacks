@@ -20,6 +20,10 @@ The stubs don't return these other states, so import them directly when building
 - `analyze.avoid_low.request.json`, `analyze.avoid_low.response.json`: that Low to Moderate route at `avoid_at_or_above: low`, where its steep segments and the track below them come back flagged.
 - `alternative.avoid_low.request.json`, `alternative.avoid_low.response.json`: the reroute at that setting. Some flagged terrain remains, so the UI has to show the leftover meters.
 
-Real replayed forecast days go in `demo_days.json`, with `"source": "demo_replay"`. Copy those values from a published UAC forecast, and never write them by hand from memory.
+- `analyze.warning.response.json`, `alternative.warning.response.json`: an Avalanche Warning day, with `avoid_at_or_above` forced to `low` and `forced_by_warning: true`.
+
+`demo_days.json` holds real replayed forecast days, keyed by date, with `"source": "demo_replay"`. **Unlike the other files, this is real UAC data.** Its `bottom_line`, `problems` and `alert` text is verbatim, including any typos, so don't edit it. Copy new days from a published UAC forecast, and never write them from memory.
+
+`2026-02-18` was checked against UAC's forecast page and its written danger summary. It's archived in relation to a fatality that day, so treat it with care.
 
 `api/tests/test_contract.py` checks these files against the models.
