@@ -26,6 +26,12 @@ function positionAt(path: Path, distance: number): Position {
 }
 
 const BUTTON = "rounded border border-slate-500 px-3 py-1.5 text-xs hover:bg-slate-700 disabled:opacity-40";
+const BASE_SPEED_MPS = 8;
+
+function formatTime(seconds: number): string {
+  const whole = Math.floor(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
 
 export function RouteRide({ mapRef, lines, name, ready }: {
   mapRef: RefObject<MapRef | null>;
@@ -39,12 +45,13 @@ export function RouteRide({ mapRef, lines, name, ready }: {
   const [preparing, setPreparing] = useState(false);
   const [active, setActive] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [speed, setSpeed] = useState(8);
+  const [speed, setSpeed] = useState(1);
+  const [jumpTime, setJumpTime] = useState("0:00");
   const [message, setMessage] = useState("");
   const animation = useRef(0);
   const generation = useRef(0);
   const distance = useRef(0);
-  const velocity = useRef(speed);
+  const velocity = useRef(BASE_SPEED_MPS);
   const snapshot = useRef<{
     map: TerrainMap; camera: CameraOptions; clamped: boolean; maxPitch: number;
     terrain: ReturnType<TerrainMap["getTerrain"]>;
@@ -57,6 +64,7 @@ export function RouteRide({ mapRef, lines, name, ready }: {
     cancelAnimationFrame(animation.current);
     setPlaying(false);
     setPreparing(false);
+    setProgress(distance.current);
   }
 
   function exit() {
@@ -71,6 +79,20 @@ export function RouteRide({ mapRef, lines, name, ready }: {
       snapshot.current = null;
     }
     setActive(false);
+  }
+
+  function stop() {
+    exit();
+    distance.current = 0;
+    setProgress(0);
+    setJumpTime("0:00");
+    setMessage("");
+  }
+
+  function changeSpeed(next: number) {
+    const multiplier = Math.max(1, Math.min(10, next));
+    velocity.current = BASE_SPEED_MPS * multiplier;
+    setSpeed(multiplier);
   }
 
   useEffect(() => () => {
@@ -91,16 +113,17 @@ export function RouteRide({ mapRef, lines, name, ready }: {
     const eyeGround = map.queryTerrainElevation(eye);
     const aheadGround = map.queryTerrainElevation(ahead);
     if (eyeGround === null || aheadGround === null || eyeGround <= 0 || aheadGround <= 0) {
-      throw new Error("Elevation tiles are loading. Pause and try Play again.");
+      throw new Error("Elevation tiles are loading. Try Start or Resume again.");
     }
+    map.setCenterClampedToGround(false);
     map.jumpTo(map.calculateCameraOptionsFromTo(
       new LngLat(...eye), eyeGround + 1.7, new LngLat(...ahead), aheadGround + 1.7,
     ));
   }
 
-  async function play() {
+  async function play(autoPlay = true) {
     const map = mapRef.current?.getMap();
-    if (!map || !path || preparing) return;
+    if (!map || !path) return;
     pause();
     const token = generation.current;
     setPreparing(true);
@@ -122,22 +145,23 @@ export function RouteRide({ mapRef, lines, name, ready }: {
       map.setTerrain({ source: "elevation", exaggeration: 1 });
       map.setCenterClampedToGround(true);
       map.setMaxPitch(120);
-      if (distance.current >= path.length) distance.current = 0;
+      if (autoPlay && distance.current >= path.length) distance.current = 0;
       const start = positionAt(path, distance.current);
       map.jumpTo({ center: start, zoom: 15, pitch: 40 });
       await new Promise<void>((resolve, reject) => {
         const timeout = setTimeout(() => {
           map.off("idle", loaded);
-          reject(new Error("Terrain took too long to load. Try Play again."));
+          reject(new Error("Terrain took too long to load. Try Start or Resume again."));
         }, 12000);
         function loaded() { clearTimeout(timeout); resolve(); }
         map.once("idle", loaded);
       });
       if (generation.current !== token) return;
-      map.setCenterClampedToGround(false);
       showPosition(map, distance.current);
       setActive(true);
       setPreparing(false);
+      setProgress(distance.current);
+      if (!autoPlay) return;
       setPlaying(true);
       let last = performance.now();
       let lastDisplay = 0;
@@ -173,7 +197,30 @@ export function RouteRide({ mapRef, lines, name, ready }: {
     }
   }
 
+  function seek(next: number) {
+    pause();
+    const position = Math.max(0, Math.min(path.length, next));
+    distance.current = position;
+    setProgress(position);
+    const seconds = position / BASE_SPEED_MPS;
+    setJumpTime(formatTime(position >= path.length ? Math.ceil(seconds) : seconds));
+    setMessage("");
+    const map = mapRef.current?.getMap();
+    if (map && active && !preparing) {
+      try {
+        showPosition(map, position);
+        return;
+      } catch {
+        // Load terrain around a distant seek position before showing it.
+      }
+    }
+    void play(false);
+  }
+
   if (!path) return null;
+  const totalSeconds = Math.ceil(path.length / BASE_SPEED_MPS);
+  const elapsedSeconds = progress >= path.length ? totalSeconds : progress / BASE_SPEED_MPS;
+  const startLabel = progress >= path.length ? "Replay" : progress > 0 ? "Resume" : "Start";
   return (
     <div className="absolute bottom-10 left-3 z-10 w-[calc(100%-1.5rem)] max-w-lg rounded-lg border border-slate-600 bg-slate-950/95 p-3 text-white shadow-xl">
       <p className="text-sm font-semibold">POV demo · {name}</p>
@@ -186,6 +233,7 @@ export function RouteRide({ mapRef, lines, name, ready }: {
               setSection(Number(event.target.value));
               distance.current = 0;
               setProgress(0);
+              setJumpTime("0:00");
               setMessage("");
             }}>
             {paths.map((item, index) => <option key={index} value={index}>{index + 1} · {Math.round(item.length)} m</option>)}
@@ -194,32 +242,47 @@ export function RouteRide({ mapRef, lines, name, ready }: {
       )}
       <div className="mt-2 flex flex-wrap items-center gap-2">
         <button type="button" disabled={!ready || preparing || playing} onClick={() => void play()} className={BUTTON}>
-          {preparing ? "Loading terrain…" : "Play POV"}
+          {preparing ? "Loading terrain…" : startLabel}
         </button>
-        <button type="button" disabled={!playing && !preparing} onClick={pause} className={BUTTON}>Pause POV</button>
-        <button type="button" disabled={!active && !preparing} onClick={exit} className={BUTTON}>Exit POV</button>
-        <label className="text-xs">Speed
+        <button type="button" disabled={!playing && !preparing} onClick={pause} className={BUTTON}>Pause</button>
+        <button type="button" disabled={!active && !preparing && progress === 0} onClick={stop} className={BUTTON}>Stop</button>
+        <button type="button" disabled={!active && !preparing} onClick={exit} className={BUTTON}>Map overview</button>
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <button type="button" disabled={speed <= 1} onClick={() => changeSpeed(speed - 1)} className={BUTTON}>Slower</button>
+        <label className="text-xs">Playback speed
           <select className="ml-1 rounded bg-slate-800 p-1" value={speed}
-            onChange={(event) => { const next = Number(event.target.value); velocity.current = next; setSpeed(next); }}>
-            {[2, 4, 8, 12].map((value) => <option key={value} value={value}>{value} m/s</option>)}
+            onChange={(event) => changeSpeed(Number(event.target.value))}>
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((value) => <option key={value} value={value}>{value}×</option>)}
           </select>
         </label>
+        <button type="button" disabled={speed >= 10} onClick={() => changeSpeed(speed + 1)} className={BUTTON}>Faster</button>
       </div>
+      <p className="mt-1 text-xs text-slate-300">Simulated time · 1× = 8 m/s</p>
       <label className="mt-2 flex items-center gap-2 text-xs">
-        <span>{Math.round(progress)} / {Math.round(path.length)} m</span>
-        <input className="min-w-0 flex-1" aria-label="POV progress" type="range" min={0} max={path.length} step={1} value={progress}
-          onChange={(event) => {
-            pause();
-            const next = Number(event.target.value);
-            distance.current = next;
-            setProgress(next);
-            const map = mapRef.current?.getMap();
-            if (map && active) {
-              try { showPosition(map, next); }
-              catch (error) { setMessage(error instanceof Error ? error.message : "Camera unavailable."); }
-            }
-          }} />
+        <span className="whitespace-nowrap">{formatTime(elapsedSeconds)} / {formatTime(totalSeconds)}</span>
+        <input className="min-w-0 flex-1" aria-label="POV progress" type="range" min={0} max={path.length} step="any" value={progress}
+          disabled={!ready}
+          aria-valuetext={`${formatTime(elapsedSeconds)}, ${Math.round(progress)} meters`}
+          onChange={(event) => seek(Number(event.target.value))} />
       </label>
+      <form className="mt-2 flex flex-wrap items-center gap-2 text-xs" onSubmit={(event) => {
+        event.preventDefault();
+        const match = /^(\d+):([0-5]\d)$/.exec(jumpTime.trim());
+        const seconds = match ? Number(match[1]) * 60 + Number(match[2]) : NaN;
+        if (!Number.isFinite(seconds) || seconds > totalSeconds) {
+          setMessage(`Enter a time from 0:00 to ${formatTime(totalSeconds)} using m:ss.`);
+          return;
+        }
+        seek(seconds * BASE_SPEED_MPS);
+      }}>
+        <label>Jump to time
+          <input className="ml-2 w-20 rounded border border-slate-600 bg-slate-900 px-2 py-1"
+            value={jumpTime} onChange={(event) => setJumpTime(event.target.value)} placeholder="m:ss" />
+        </label>
+        <button type="submit" disabled={!ready} className={BUTTON}>Go to time</button>
+        <span className="text-slate-300">{Math.round(progress)} / {Math.round(path.length)} m</span>
+      </form>
       <p className="mt-1 text-xs text-amber-200" role="status">
         {message || "Playback follows this section only. Snow cover and obstacles remain unverified."}
       </p>
