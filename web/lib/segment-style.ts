@@ -13,17 +13,24 @@ export const SEGMENT_HEX: Record<SegmentColor, string> = {
   black: "#0a0a0a",
 };
 
+/** A rerouted-away original line: always dashed gray, whatever its colors were. */
+export const GHOST_HEX = "#6b7280";
+
 export const SOURCE_IDS = {
   draft: "route-draft",
+  /** The route's analyzed segments. */
   segments: "route-segments",
+  /** The reroute's analyzed segments, drawn beside the ghosted original. */
+  alternative: "route-alternative",
+  /** The rerouted-away original, drawn as a dashed gray ghost. */
+  ghost: "route-ghost",
 } as const;
 
 export const LAYER_IDS = {
   sky: "sky",
   draft: "route-draft-line",
-  casing: "route-segments-casing",
-  solid: "route-segments-solid",
-  unrated: "route-segments-unrated",
+  ghost: "route-ghost-line",
+  alternativeUncolored: "route-alternative-uncolored",
 } as const;
 
 // Under-30-degree gray is thin, steep terrain is wider, and anything the server
@@ -102,37 +109,68 @@ export const unanalyzedLineLayer: LayerProps = {
   paint: { "line-color": "#ffffff", "line-width": 2, "line-opacity": 0.7 },
 };
 
-/** Dark outline under every segment; white under black (Extreme) so it shows on rock. */
-export const segmentCasingLayer: LayerProps = {
-  id: LAYER_IDS.casing,
-  type: "line",
-  layout: { "line-join": "round", "line-cap": "round" },
-  paint: {
-    "line-color": ["case", ["==", ["get", "color"], "black"], "#ffffff", "rgba(0,0,0,0.55)"],
-    "line-width": CASING_WIDTH,
-  },
-};
+/**
+ * The three layers that draw analyzed segments. `prefix` keeps the ids unique, so the
+ * route and its reroute can both be on the map.
+ */
+export function segmentLayers(prefix: string): {
+  casing: LayerProps;
+  solid: LayerProps;
+  unrated: LayerProps;
+} {
+  return {
+    // Dark outline under every segment; white under black (Extreme) so it shows on rock.
+    casing: {
+      id: `${prefix}-casing`,
+      type: "line",
+      layout: { "line-join": "round", "line-cap": "round" },
+      paint: {
+        "line-color": ["case", ["==", ["get", "color"], "black"], "#ffffff", "rgba(0,0,0,0.55)"],
+        "line-width": CASING_WIDTH,
+      },
+    },
+    solid: {
+      id: `${prefix}-solid`,
+      type: "line",
+      filter: NOT_UNRATED,
+      layout: { "line-join": "round", "line-cap": "round" },
+      paint: { "line-color": COLOR, "line-width": WIDTH },
+    },
+    // Unrated 30 degree or steeper terrain: dashed magenta, paired with a "?" pin.
+    unrated: {
+      id: `${prefix}-unrated`,
+      type: "line",
+      filter: IS_UNRATED,
+      layout: { "line-join": "round", "line-cap": "butt" },
+      paint: {
+        "line-color": SEGMENT_HEX.unrated,
+        "line-width": WIDTH,
+        "line-dasharray": [1.5, 1],
+      },
+    },
+  };
+}
 
-export const segmentSolidLayer: LayerProps = {
-  id: LAYER_IDS.solid,
+/**
+ * The original line after a reroute: one dashed gray stroke over every segment,
+ * ignoring their colors, so it can't be read as unrated (dashed magenta) terrain.
+ */
+export const ghostLineLayer: LayerProps = {
+  id: LAYER_IDS.ghost,
   type: "line",
-  filter: NOT_UNRATED,
-  layout: { "line-join": "round", "line-cap": "round" },
-  paint: {
-    "line-color": COLOR,
-    "line-width": WIDTH,
-  },
-};
-
-/** Unrated 30 degree or steeper terrain: dashed magenta, paired with a "?" pin. */
-export const segmentUnratedLayer: LayerProps = {
-  id: LAYER_IDS.unrated,
-  type: "line",
-  filter: IS_UNRATED,
   layout: { "line-join": "round", "line-cap": "butt" },
   paint: {
-    "line-color": SEGMENT_HEX.unrated,
-    "line-width": WIDTH,
-    "line-dasharray": [1.5, 1],
+    "line-color": GHOST_HEX,
+    "line-width": 4,
+    "line-opacity": 0.9,
+    "line-dasharray": [2, 1.5],
   },
+};
+
+/** A reroute line that couldn't be analyzed: solid white, with no claim about its terrain. */
+export const uncoloredAlternativeLayer: LayerProps = {
+  id: LAYER_IDS.alternativeUncolored,
+  type: "line",
+  layout: { "line-join": "round", "line-cap": "round" },
+  paint: { "line-color": "#ffffff", "line-width": 4 },
 };
