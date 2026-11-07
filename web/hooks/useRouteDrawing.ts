@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useReducer } from "react";
+import type { MapMouseEvent } from "react-map-gl/mapbox";
 import {
   analyzeRoute,
   localDateIso,
@@ -28,6 +29,7 @@ type Action =
   | { type: "reanalyze" }
   | { type: "resolved"; key: number; analysis: Fetched<AnalyzeResponse> }
   | { type: "failed"; key: number; error: string }
+  | { type: "adopt"; points: LngLat[]; analysis: AnalyzeResponse }
   | { type: "clear" };
 
 const initialState: State = {
@@ -60,12 +62,29 @@ function reducer(state: State, action: Action): State {
     case "failed":
       if (action.key !== state.requestKey) return state;
       return { ...state, phase: "error", error: action.error };
+    case "adopt":
+      // "Use this route": the reroute, already analyzed, becomes the route.
+      return {
+        points: action.points,
+        phase: "analyzed",
+        analysis: { data: action.analysis, offline: false },
+        error: null,
+        requestKey: state.requestKey + 1,
+      };
     case "clear":
       return { ...initialState, requestKey: state.requestKey + 1 };
   }
 }
 
+/**
+ * A double-click fires two clicks first. A click this close (screen pixels) to the
+ * last waypoint is treated as the same point, so finishing doesn't add a duplicate.
+ */
+const SAME_POINT_PX = 8;
+
 type Options = {
+  /** Map clicks only drop waypoints while enabled (draw mode). */
+  enabled: boolean;
   avoidAtOrAbove: AvoidAtOrAbove;
   /** YYYY-MM-DD. Defaults to today in the browser's time zone, read at request time. */
   date?: string;
@@ -76,9 +95,10 @@ type Options = {
  * current `avoid_at_or_above`. Falls back to the analyze fixture only when the
  * API can't be reached at all.
  */
-export function useRouteDrawing({ avoidAtOrAbove, date }: Options) {
+export function useRouteDrawing({ enabled, avoidAtOrAbove, date }: Options) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const { phase, points, requestKey } = state;
+  const isDrawing = enabled && phase === "drawing";
 
   useEffect(() => {
     if (phase !== "analyzing") return;
@@ -100,13 +120,44 @@ export function useRouteDrawing({ avoidAtOrAbove, date }: Options) {
     };
   }, [phase, points, requestKey, avoidAtOrAbove, date]);
 
+  const handleMapClick = useCallback(
+    (event: MapMouseEvent) => {
+      if (!isDrawing) return;
+      const last = points.at(-1);
+      if (last) {
+        const p = event.target.project(last);
+        if (Math.hypot(p.x - event.point.x, p.y - event.point.y) < SAME_POINT_PX) return;
+      }
+      dispatch({ type: "add", point: [event.lngLat.lng, event.lngLat.lat] });
+    },
+    [isDrawing, points],
+  );
+
+  const handleMapDblClick = useCallback(
+    (event: MapMouseEvent) => {
+      if (!isDrawing) return;
+      event.preventDefault(); // keep the map from zooming
+      dispatch({ type: "finish" });
+    },
+    [isDrawing],
+  );
+
   return {
     ...state,
-    addPoint: useCallback((point: LngLat) => dispatch({ type: "add", point }), []),
+    /** True while map clicks drop waypoints. */
+    isDrawing,
+    handleMapClick,
+    handleMapDblClick,
     undo: useCallback(() => dispatch({ type: "undo" }), []),
     finish: useCallback(() => dispatch({ type: "finish" }), []),
     /** Re-run /analyze on the same line, e.g. after the avoid setting changes, or to retry. */
     reanalyze: useCallback(() => dispatch({ type: "reanalyze" }), []),
     clear: useCallback(() => dispatch({ type: "clear" }), []),
+    adopt: useCallback(
+      (points: LngLat[], analysis: AnalyzeResponse) => dispatch({ type: "adopt", points, analysis }),
+      [],
+    ),
   };
 }
+
+export type RouteDrawing = ReturnType<typeof useRouteDrawing>;

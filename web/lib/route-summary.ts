@@ -40,7 +40,8 @@ export function summarizeRoute(totals: Totals): RouteSummary {
     };
   }
   if (totals.steep_segment_count > 0) {
-    const n = totals.steep_segment_count;
+    // Segments under 50 m apart merge into one stretch for the banner.
+    const n = totals.steep_stretch_count;
     return {
       tone: "listed",
       text: `${n} ${plural(n, "stretch", "stretches")} in avalanche terrain, rated ${ratingRangeLabel(totals.steep_ratings)} today (${meters(totals.steep_length_m)}). Not rerouted by default.`,
