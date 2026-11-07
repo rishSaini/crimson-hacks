@@ -1,13 +1,13 @@
 import path from "node:path";
 import type { NextConfig } from "next";
 
+const repoRoot = path.join(__dirname, "..");
+
 const nextConfig: NextConfig = {
-  /* config options here */
   cacheComponents: true,
   partialPrefetching: true,
-  // The preview page imports route samples and fixtures from outside web/.
-  turbopack: { root: path.join(__dirname, "..") },
-  outputFileTracingRoot: path.join(__dirname, ".."),
+  turbopack: { root: repoRoot },
+  outputFileTracingRoot: repoRoot,
 };
 
 export default nextConfig;
