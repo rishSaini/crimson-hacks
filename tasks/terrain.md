@@ -19,6 +19,7 @@ Owns `data/` and the terrain modules in `api/app/`. Turn `api/tests/test_terrain
 - [ ] Score each point by the table in `CLAUDE.md`, with `flagged` from `is_reroute_target` and the request's `avoid_at_or_above`. Unrated 30 degrees or more is always flagged, with `flag_reason: unrated_terrain`
 - [ ] Merge same-color points into segments, drop flagged runs under 30 m, compute totals including `steep_segment_count` and `steep_length_m`
 - [ ] Replace the `POST /analyze` stub, with `source` taken from the forecast it used
+- [ ] Apply `effective_avoid_at_or_above` from `app/forecast.py` to the request's setting and that day's `alert.level`, then return the applied value and `forced_by_warning`. Do the same in `POST /alternative`
 - [ ] Spot-check 3 known slopes against a published slope-angle map (hour 2)
 
 ## Hour 6 to 12: demo features

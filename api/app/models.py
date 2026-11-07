@@ -4,10 +4,23 @@ Units follow what the UI shows: distances in meters, elevation and climb in feet
 slope in degrees. Positions are GeoJSON order: [longitude, latitude].
 """
 
+import re
 from datetime import date as Date
+from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+# RedRun-authored strings and LLM output must never match this. UAC's own words are
+# exempt: ForecastResponse's bottom_line, problems and alert hold them verbatim.
+SAFE_LANGUAGE = re.compile(r"\b(safe|safer|safest|safely)\b", re.IGNORECASE)
+
+
+def reject_safe_language(text: str) -> str:
+    if SAFE_LANGUAGE.search(text):
+        raise ValueError('RedRun text and LLM output must not call terrain "safe"')
+    return text
+
 
 Aspect = Literal["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 ElevationBand = Literal["upper", "mid", "lower"]
@@ -75,7 +88,31 @@ class RoseCell(ApiModel):
 
 class AvalancheProblem(ApiModel):
     name: str
-    description: str
+    description: str = Field(description="UAC's words, verbatim")
+
+
+AlertLevel = Literal["none", "watch", "warning", "special_bulletin"]
+
+
+class ForecastAlert(ApiModel):
+    """UAC's alert for this forecast day. Text fields hold UAC's words, verbatim."""
+
+    level: AlertLevel
+    what: str | None = None
+    where: str | None = None
+    what_to_do: str | None = None
+    valid_from: datetime | None = None
+    valid_to: datetime | None = None
+
+    @model_validator(mode="after")
+    def details_match_level(self) -> "ForecastAlert":
+        details = [self.what, self.where, self.what_to_do, self.valid_from, self.valid_to]
+        if self.level == "none":
+            if any(detail is not None for detail in details):
+                raise ValueError("level 'none' must not carry alert details")
+        elif any(detail is None for detail in details):
+            raise ValueError(f"level '{self.level}' needs all of its alert details")
+        return self
 
 
 class ForecastResponse(ApiModel):
@@ -83,6 +120,7 @@ class ForecastResponse(ApiModel):
     date: Date
     source: DataSource
     overall_danger: DangerLevel
+    alert: ForecastAlert
     ratings_issued: bool = Field(
         description="False if all 24 rose values are 0: the UI shows the no-ratings banner"
     )
@@ -92,7 +130,7 @@ class ForecastResponse(ApiModel):
         description="Upper N clockwise to NW, then mid, then lower",
     )
     problems: list[AvalancheProblem]
-    bottom_line: str
+    bottom_line: str = Field(description="UAC's words, verbatim")
     forecast_url: str
 
     @model_validator(mode="after")
@@ -184,12 +222,17 @@ class RouteTotals(ApiModel):
 class AnalyzeResponse(ApiModel):
     date: Date
     source: DataSource
-    avoid_at_or_above: AvoidThreshold
+    avoid_at_or_above: AvoidThreshold = Field(description="The setting actually applied")
+    forced_by_warning: bool = Field(
+        description="An Avalanche Warning forced low for this forecast day"
+    )
     segments: SegmentCollection
     totals: RouteTotals
 
     @model_validator(mode="after")
     def flags_match_setting(self) -> "AnalyzeResponse":
+        if self.forced_by_warning and self.avoid_at_or_above != "low":
+            raise ValueError("a Warning forces avoid_at_or_above to low")
         flagged_dangers = FLAGGED_DANGERS[self.avoid_at_or_above]
         for feature in self.segments.features:
             segment = feature.properties
@@ -234,15 +277,22 @@ class AlternativeResponse(ApiModel):
     source: DataSource
     status: Literal["found", "no_line"]
     corridor_width_m: float
-    avoid_at_or_above: AvoidThreshold
+    avoid_at_or_above: AvoidThreshold = Field(description="The setting actually applied")
+    forced_by_warning: bool = Field(
+        description="An Avalanche Warning forced low for this forecast day"
+    )
     message: str
     alternative: LineString | None = None
     comparison: RouteComparison | None = None
     fallbacks: list[FallbackOption] = Field(default_factory=list)
     turnaround_point: Position | None = None
 
+    _no_safe_message = field_validator("message")(reject_safe_language)
+
     @model_validator(mode="after")
     def status_matches_payload(self) -> "AlternativeResponse":
+        if self.forced_by_warning and self.avoid_at_or_above != "low":
+            raise ValueError("a Warning forces avoid_at_or_above to low")
         if self.status == "found":
             if self.alternative is None or self.comparison is None:
                 raise ValueError("status 'found' needs alternative and comparison")
@@ -265,7 +315,9 @@ class BriefingRequest(ApiModel):
 class BriefingItem(ApiModel):
     segment_id: int
     avalanche_problem: str
-    note: str
+    note: str = Field(description="LLM output, checked by reject_safe_language")
+
+    _no_safe_note = field_validator("note")(reject_safe_language)
 
 
 class BriefingResponse(ApiModel):

@@ -58,5 +58,6 @@
     "max_deviation_m": 311
   },
   "fallbacks": [],
-  "turnaround_point": null
+  "turnaround_point": null,
+  "forced_by_warning": false
 }

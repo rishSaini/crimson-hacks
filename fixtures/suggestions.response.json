@@ -17,6 +17,7 @@
     "date": "2026-01-15",
     "source": "fixture",
     "avoid_at_or_above": "considerable",
+    "forced_by_warning": false,
     "segments": {
       "type": "FeatureCollection",
       "features": [

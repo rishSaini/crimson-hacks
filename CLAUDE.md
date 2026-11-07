@@ -8,7 +8,9 @@ Target user: a Salt Lake skier or splitboarder new to touring in Big Cottonwood,
 
 ## Safety language (hard rule)
 
-**The UI never calls a route, segment or slope "safe".** This covers UI copy, fixtures, LLM output and pitch material.
+**The UI never calls a route, segment or slope "safe".** This covers RedRun's own UI copy, fixtures, LLM output and pitch material. The models and tests reject "safe", "safer", "safest" and "safely" in these.
+
+**The one exception is UAC's own text.** `bottom_line`, `problems` and `alert` hold it verbatim, including words like "safer". Never trim or reword it, and always show it in a block attributed to UAC with a link to the full forecast. LLM output still can't use the word, even when quoting UAC.
 
 - Under 30 degrees is "no avalanche-terrain flag", never "safe" or "clear".
 - A reroute "avoids terrain flagged by today's forecast", never "has no avalanche risk".
@@ -95,6 +97,17 @@ The primary Reroute button shows if and only if `flagged_stretch_count` is above
 
 "Avoid these too" applies to the current route only and never changes the saved setting. After that reroute, the comparison card shows a text link, "Make this my default", which updates the saved setting only when tapped.
 
+### Alerts
+
+`ForecastResponse.alert` has a `level` (`none`, `watch`, `warning` or `special_bulletin`) and `what`, `where`, `what_to_do`, `valid_from` and `valid_to`. Any level but `none` shows as a full-width banner above everything.
+
+On a forecast day with a `warning`:
+
+- The server forces `avoid_at_or_above` to `low` for that forecast day only, using `effective_avoid_at_or_above`, and returns `forced_by_warning: true`. The saved setting never changes.
+- The banner explains why everything steep is flagged.
+- The comparison card adds: "UAC recommends avoiding all avalanche terrain today."
+- Nothing may imply that a rerouted line makes going out okay.
+
 If `ratings_issued` is false (all 24 rose values are 0), show the banner "No danger ratings issued today. Steep terrain is shown as unrated."
 
 A rerouted-away original line is always dashed **gray**, whatever its colors were, so it can't be confused with dashed magenta.
@@ -104,7 +117,8 @@ A rerouted-away original line is always dashed **gray**, whatever its colors wer
 - Positions are GeoJSON `[lng, lat]`. Distances are meters; elevation and climb are feet; the DEM is in meters, so convert.
 - The analysis uses only the 3DEP grids. Mapbox terrain is for display.
 - The server holds only the grids and forecast cache, so a restart costs nothing.
-- Cache UAC requests for 15 minutes and send a real User-Agent with a contact email.
+- UAC's forecast JSON needs an API token (`UAC_API_TOKEN`). Cache requests for 15 minutes and send a real User-Agent with a contact email.
+- Avalanche.org only has one overall rating per zone. Never apply it to every aspect as a stand-in for the rose.
 - Fixtures are made up and marked `source: fixture`. Real demo days go in `fixtures/demo_days.json`, copied from a published forecast.
 - Secrets go in `.env` files, which are ignored by git. The DEM grids are committed.
 - Model for the LLM features: `claude-sonnet-5-5`.

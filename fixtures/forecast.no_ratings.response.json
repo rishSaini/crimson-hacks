@@ -200,5 +200,13 @@
   ],
   "problems": [],
   "bottom_line": "FIXTURE TEXT, not a real forecast. No danger ratings issued for this date.",
-  "forecast_url": "https://utahavalanchecenter.org/forecast/salt-lake"
+  "forecast_url": "https://utahavalanchecenter.org/forecast/salt-lake",
+  "alert": {
+    "level": "none",
+    "what": null,
+    "where": null,
+    "what_to_do": null,
+    "valid_from": null,
+    "valid_to": null
+  }
 }

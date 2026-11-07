@@ -36,6 +36,8 @@ The stubs only return the default case. Import the rest from `fixtures/` directl
 | Low or Moderate only | `analyze.low_only`, `analyze.moderate_only`, `analyze.low_moderate` (`.response.json`) |
 | Same route at `avoid_at_or_above: low` | `analyze.avoid_low.response.json` |
 | Reroute at that setting | `alternative.avoid_low.response.json` |
+| Real Avalanche Warning forecast | `demo_days.json` |
+| Warning day analysis and reroute | `analyze.warning.response.json`, `alternative.warning.response.json` |
 | No clean line | `alternative.no_line.response.json` |
 
 ## What you need from others
@@ -60,5 +62,8 @@ After anyone changes the API models, run `npm run gen:types` with the API runnin
 - **No UI exception for Beginner mode.** `flagged` is computed server-side from the `avoid_at_or_above` you send, so in Beginner mode a Low-rated steep stretch comes back flagged and the primary Reroute button shows on its own. Don't work out flags in the UI.
 
 - **"Avoid these too" applies to the current route only** and never changes the saved setting. After that reroute, the comparison card shows a text link, "Make this my default", which updates the saved setting only when tapped.
+- **Alerts are a full-width banner above everything.** On a Warning day the server forces `low` and returns `forced_by_warning: true`. The banner explains why everything steep is flagged, and the saved setting doesn't change.
+- **On Warning days the comparison card adds:** "UAC recommends avoiding all avalanche terrain today." Never imply a rerouted line makes going out okay.
+- **UAC's text is shown verbatim,** in a block attributed to UAC with a link to the full forecast. It can contain words like "safer", which is the one exception to the "safe" rule. Your own copy still can't use them, and a test scans `web/` for them.
 
 `POST /analyze` and `POST /alternative` both accept `avoid_at_or_above`, but the stubs ignore it and return the `considerable` fixture. Import the `avoid_low` fixtures to build the `low` states until the real endpoints land.

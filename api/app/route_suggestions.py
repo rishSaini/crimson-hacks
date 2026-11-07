@@ -209,7 +209,7 @@ def suggest_routes(
     suggestions = accepted[:request.limit]
     return SuggestionsResponse(
         date=forecast.date, source=forecast.source,
-        avoid_at_or_above=request.avoid_at_or_above,
+        avoid_at_or_above=original.avoid_at_or_above,
         status='found' if suggestions else 'no_match',
         message=(
             'Nearby mapped sections meet the selected grade, distance, climb, and exposure limits.'

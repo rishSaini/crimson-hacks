@@ -2,7 +2,6 @@
 
 import json
 import math
-import re
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,8 +13,11 @@ from app.models import (
     AlternativeResponse,
     AnalyzeRequest,
     AnalyzeResponse,
+    SAFE_LANGUAGE,
+    BriefingItem,
     BriefingRequest,
     BriefingResponse,
+    ForecastAlert,
     ForecastResponse,
     SegmentProperties,
 )
@@ -47,6 +49,8 @@ def fixture(name: str):
         ("analyze.low_moderate.response.json", AnalyzeResponse),
         ("analyze.avoid_low.request.json", AnalyzeRequest),
         ("analyze.avoid_low.response.json", AnalyzeResponse),
+        ("analyze.warning.response.json", AnalyzeResponse),
+        ("alternative.warning.response.json", AlternativeResponse),
         ("alternative.avoid_low.request.json", AlternativeRequest),
         ("alternative.avoid_low.response.json", AlternativeResponse),
         ("forecast.response.json", ForecastResponse),
@@ -277,6 +281,7 @@ def test_unflagged_fixtures_name_the_ratings_present(name, ratings):
         "analyze.moderate_only.response.json",
         "analyze.low_moderate.response.json",
         "analyze.avoid_low.response.json",
+        "analyze.warning.response.json",
     ],
 )
 def test_analyze_fixture_totals_match_segments(name):
@@ -306,6 +311,125 @@ def test_briefing_fixture_only_cites_segments_it_was_given():
         assert item["segment_id"] in request_ids
 
 
-def test_fixtures_never_call_terrain_safe():
-    for path in FIXTURES_DIR.glob("*.json"):
-        assert not re.search(r"\bsafe\b", path.read_text(), re.IGNORECASE), path.name
+# Fields that hold UAC's words verbatim. Everything else is RedRun's own text.
+UAC_QUOTED_KEYS = {"bottom_line", "problems", "alert"}
+REPO_ROOT = FIXTURES_DIR.parent
+
+
+def without_uac_text(value):
+    if isinstance(value, dict):
+        return {
+            key: without_uac_text(item)
+            for key, item in value.items()
+            if key not in UAC_QUOTED_KEYS
+        }
+    if isinstance(value, list):
+        return [without_uac_text(item) for item in value]
+    return value
+
+
+@pytest.mark.parametrize("path", sorted(FIXTURES_DIR.glob("*.json")), ids=lambda path: path.name)
+def test_redrun_text_in_fixtures_never_calls_terrain_safe(path):
+    redrun_text = json.dumps(without_uac_text(json.loads(path.read_text())))
+    assert not SAFE_LANGUAGE.search(redrun_text)
+
+
+def test_ui_source_never_calls_terrain_safe():
+    sources = [
+        path
+        for folder in ("web/app", "web/components", "web/lib")
+        for path in (REPO_ROOT / folder).rglob("*.ts*")
+    ]
+    assert sources
+    for path in sources:
+        assert not SAFE_LANGUAGE.search(path.read_text()), path.name
+
+
+def test_quoted_uac_text_is_exempt():
+    body = fixture("demo_days.json")["2026-02-18"]
+    quoted = json.dumps({key: body[key] for key in UAC_QUOTED_KEYS})
+    assert SAFE_LANGUAGE.search(quoted)
+    ForecastResponse.model_validate(body)
+    assert not SAFE_LANGUAGE.search(json.dumps(without_uac_text(body)))
+
+
+def test_uac_text_is_stored_verbatim():
+    body = fixture("demo_days.json")["2026-02-18"]
+    assert "Find safer riding conditions on slopes less than 30° with no overhead hazard" in (
+        body["alert"]["what_to_do"]
+    )
+    assert "If you're considering “safe” travel on a ridgeline" in (
+        body["problems"][1]["description"]
+    )
+
+
+def test_redrun_field_outside_the_quoted_keys_is_still_checked():
+    assert SAFE_LANGUAGE.search(json.dumps(without_uac_text({"message": "This is safe."})))
+
+
+@pytest.mark.parametrize(
+    "note",
+    [
+        "Segment 4 is safe today.",
+        "This is a SAFE line.",
+        "Segment 2 is safer than segment 4.",
+        "Segment 1 is the safest choice.",
+        "You can safely cross here.",
+    ],
+)
+def test_llm_output_fails_on_safe(note):
+    with pytest.raises(ValidationError):
+        BriefingItem(segment_id=1, avalanche_problem="Wind Drifted Snow", note=note)
+
+
+def test_llm_output_fails_even_when_quoting_uac():
+    with pytest.raises(ValidationError):
+        BriefingItem(
+            segment_id=1,
+            avalanche_problem="Persistent Weak Layer",
+            note="UAC says to find safer riding conditions.",
+        )
+
+
+def test_llm_output_without_the_word_passes():
+    BriefingItem(segment_id=1, avalanche_problem="Wind Drifted Snow", note="Look for cracking.")
+
+
+def test_alternative_message_fails_on_safe():
+    body = {**fixture("alternative.response.json"), "message": "This route is safe."}
+    with pytest.raises(ValidationError):
+        AlternativeResponse.model_validate(body)
+
+
+def test_alert_none_carries_no_details():
+    with pytest.raises(ValidationError):
+        ForecastAlert(level="none", what="Something")
+
+
+@pytest.mark.parametrize("level", ["watch", "warning", "special_bulletin"])
+def test_alert_needs_all_details(level):
+    with pytest.raises(ValidationError):
+        ForecastAlert(level=level, what="Something")
+
+
+def test_forecast_requires_an_alert():
+    body = fixture("forecast.response.json")
+    del body["alert"]
+    with pytest.raises(ValidationError):
+        ForecastResponse.model_validate(body)
+
+
+@pytest.mark.parametrize(
+    "name, model",
+    [
+        ("analyze.warning.response.json", AnalyzeResponse),
+        ("alternative.warning.response.json", AlternativeResponse),
+    ],
+)
+def test_warning_fixtures_are_forced_to_low(name, model):
+    body = fixture(name)
+    assert body["forced_by_warning"] is True
+    assert body["avoid_at_or_above"] == "low"
+    body["avoid_at_or_above"] = "considerable"
+    with pytest.raises(ValidationError):
+        model.model_validate(body)

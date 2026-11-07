@@ -22,6 +22,7 @@ from app.models import (
     SegmentProperties,
 )
 from app.terrain import aspect_octant, is_reroute_target, rose_value
+from app.forecast import effective_avoid_at_or_above
 
 GRID_DIR = Path(__file__).resolve().parents[2] / "data" / "grids"
 METERS_TO_FEET = 1 / 0.3048
@@ -145,6 +146,9 @@ def analyze_route(
     request: AnalyzeRequest, forecast: ForecastResponse, grids: TerrainGrids
 ) -> AnalyzeResponse:
     """Rate intervals of at most 15 m and retain every original route vertex."""
+    threshold, forced_by_warning = effective_avoid_at_or_above(
+        request.avoid_at_or_above, forecast.alert.level
+    )
     longitude, latitude = zip(*request.route.coordinates)
     x, y = TO_UTM.transform(longitude, latitude)
     vertices = np.column_stack((x, y))
@@ -170,13 +174,13 @@ def analyze_route(
     lengths = np.linalg.norm(np.diff(projected, axis=0), axis=1)
     rose = [cell.value for cell in forecast.rose]
     samples = [
-        grids.sample(*midpoint, rose, request.avoid_at_or_above)
+        grids.sample(*midpoint, rose, threshold)
         for midpoint in (projected[:-1] + projected[1:]) / 2
     ]
 
     features = []
     first = 0
-    threshold_level = {"considerable": 3, "moderate": 2, "low": 1}[request.avoid_at_or_above]
+    threshold_level = {"considerable": 3, "moderate": 2, "low": 1}[threshold]
     for (level, overhead), group in groupby(
         samples, key=lambda sample: (sample.level, sample.overhead_level)
     ):
@@ -227,7 +231,8 @@ def analyze_route(
     return AnalyzeResponse(
         date=forecast.date,
         source=forecast.source,
-        avoid_at_or_above=request.avoid_at_or_above,
+        avoid_at_or_above=threshold,
+        forced_by_warning=forced_by_warning,
         segments=SegmentCollection(features=features),
         totals=totals,
     )
