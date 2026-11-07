@@ -287,7 +287,8 @@
 }
 
 /* Display toggles in the top bar */
-.displayToggles { display: flex; gap: 6px; }
+.displayToggles { display: flex; gap: 6px; margin-left: auto; }
+.sourcePicker ~ .displayToggles { margin-left: 0; }
 .toggleButton { display: flex; align-items: center; gap: 6px; height: 34px; padding: 0 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--paper); color: var(--ink); font-size: 11px !important; font-weight: 550 !important; }
 .toggleButton:hover { background: var(--surface); }
 .toggleButton[aria-pressed=true] { background: var(--forest-soft); border-color: var(--forest); color: var(--forest); }

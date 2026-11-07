@@ -1,6 +1,7 @@
 "use client";
 
 import type { AlternativeResponse, ForecastResponse, PlanResponse } from "@/lib/api";
+import { useState } from "react";
 import { DANGER, SOURCE, dangerStyle, formatDay, routeMessage, stretchKind, type Danger } from "@/lib/danger";
 import type { AnalyzeResponse } from "@/lib/api";
 import { useDisplayPrefs } from "@/lib/useDisplayPrefs";
@@ -236,14 +237,12 @@ export function PlannerPanel({ planner, onFocus, locked = false }: {
   const message = shown && plan && shown !== plan.analysis ? routeMessage(shown.totals) : plan?.message;
   const shownFlagged = totals?.flagged_stretch_count ?? 0;
   const { colorBlind } = useDisplayPrefs();
+  const [tab, setTab] = useState<"route" | "forecast">("route");
+  const forecastDanger = dangerStyle(planner.forecast?.overall_danger ?? "no_rating", colorBlind);
   const worst = totals?.max_flagged_danger ? dangerStyle(totals.max_flagged_danger, colorBlind) : null;
 
   return (
     <div className={styles.panel}>
-      <p className={styles.intro}>
-        Click two points. See where the forecast flags the route, then reroute around those stretches.
-      </p>
-
       <div className={styles.dayPicker} role="group" aria-label="Forecast day">
         {DEMO_DAYS.map((day) => {
           const [date, note] = splitDayLabel(day.label);
@@ -256,6 +255,23 @@ export function PlannerPanel({ planner, onFocus, locked = false }: {
         })}
       </div>
 
+      <div className={styles.tabs} role="tablist" aria-label="Planner sections">
+        <button type="button" role="tab" id="tab-route" aria-controls="panel-route" aria-selected={tab === "route"}
+          onClick={() => setTab("route")}>Route</button>
+        <button type="button" role="tab" id="tab-forecast" aria-controls="panel-forecast" aria-selected={tab === "forecast"}
+          onClick={() => setTab("forecast")}>
+          Forecast
+          {planner.forecast && (
+            <span className={styles.tabChip} style={{ background: forecastDanger.fill, color: forecastDanger.text }}>
+              {forecastDanger.level ?? "–"}
+            </span>
+          )}
+          {planner.forecast && planner.forecast.alert.level !== "none" && <span className={styles.tabAlert} aria-label="UAC alert" />}
+        </button>
+      </div>
+
+      {tab === "route" ? (
+      <div className={styles.tabPanel} role="tabpanel" id="panel-route" aria-labelledby="tab-route">
       <label className={styles.field}>Flag and avoid
         {/* On a Warning day the server forces Low for this day only; show that, never save it. */}
         <select value={forced ? "low" : planner.effectiveSetting} disabled={forced || locked}
@@ -370,6 +386,9 @@ export function PlannerPanel({ planner, onFocus, locked = false }: {
         </section>
       )}
 
+      </div>
+      ) : (
+      <div className={styles.tabPanel} role="tabpanel" id="panel-forecast" aria-labelledby="tab-forecast">
       {planner.forecast ? <ForecastCard key={planner.forecast.date} forecast={planner.forecast} />
         : planner.forecastFailed ? (
           <p role="alert" className={`${styles.notice} ${styles.noticeRed}`}>
@@ -381,6 +400,8 @@ export function PlannerPanel({ planner, onFocus, locked = false }: {
         <PreviewIcon name="info" size={16} />
         <span><strong>New to avalanche terrain?</strong> Find an avalanche course and the daily forecast at the Utah Avalanche Center ↗</span>
       </a>
+      </div>
+      )}
     </div>
   );
 }

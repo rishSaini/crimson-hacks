@@ -300,7 +300,7 @@ export function RoutePreview({ samples, demo, matchSketch }: {
           <span>redrun<span className={styles.brandPeriod}>.</span></span>
         </Link>
         <div className={styles.location}><PreviewIcon name="pin" size={17} /><span>Little Cottonwood Canyon<span>Utah, United States</span></span></div>
-        <div className={styles.sourcePicker}>
+        {tool === "sections" && <div className={styles.sourcePicker}>
           <label htmlFor="source-sample">Source track</label>
           <select id="source-sample" aria-label="Source sample" disabled={!mapReady || rideActive || busy} value={sample.id} onChange={(event) => {
             const selected = samples.find((item) => item.id === event.target.value);
@@ -315,7 +315,7 @@ export function RoutePreview({ samples, demo, matchSketch }: {
           }}>
             {samples.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
           </select>
-        </div>
+        </div>}
         <div className={styles.displayToggles} role="group" aria-label="Display">
           <button type="button" className={styles.toggleButton} aria-pressed={prefs.colorBlind} onClick={prefs.toggleColorBlind}
             title="Color-blind palette: danger levels as a light-to-dark scale">
@@ -326,7 +326,6 @@ export function RoutePreview({ samples, demo, matchSketch }: {
             <PreviewIcon name={prefs.dark ? "sun" : "moon"} size={16} /><span>{prefs.dark ? "Light" : "Dark"}</span>
           </button>
         </div>
-        <span className={styles.prototype}>Local preview</span>
       </header>
       {alert && showAlert && <AlertStrip key={alert.date} alert={alert.alert} forecastUrl={alert.forecast_url} />}
       <section ref={mapSection} aria-label="Route map" aria-describedby="map-keyboard-help" className={styles.map}
@@ -350,6 +349,13 @@ export function RoutePreview({ samples, demo, matchSketch }: {
           initialViewState={{ longitude: -111.681, latitude: 40.5585, zoom: 12.8 }}
           style={{ width: "100%", height: "100%" }}
           cursor={drawing || tool === "plan" ? "crosshair" : "grab"}
+          onError={(event) => {
+            // The public USGS and terrain tile servers drop tiles now and then; MapLibre retries
+            // and leaves a gap. Keep those out of the error log, and report anything else.
+            const message = String((event.error as Error | undefined)?.message ?? "");
+            const isTile = "tile" in event || "sourceId" in event || /Failed to fetch|AJAXError|404|503/.test(message);
+            if (!isTile) console.error(event.error);
+          }}
           onLoad={() => {
             frame(sample.lines.flat());
             map.current?.getCanvas().setAttribute("aria-describedby", "map-keyboard-help");
@@ -423,7 +429,7 @@ export function RoutePreview({ samples, demo, matchSketch }: {
             onClick={() => frame(tool === "plan" ? planner.line ?? [] : playbackLines.flat())}><PreviewIcon name="focus" /></button>
         </div>
         {tool === "plan" ? (
-          <PlanLegend />
+          planner.activeAnalysis && <PlanLegend />
         ) : (
         <div className={styles.legend} aria-label="Map legend">
           <span><i className={styles.sourceSwatch} />Source track</span>
@@ -441,7 +447,7 @@ export function RoutePreview({ samples, demo, matchSketch }: {
             : "Click the map to add points to your sketch."}
         </div>}
         {tool === "plan" ? (
-          <RouteRide key={planner.line ? `plan-${planner.line[0]}-${planner.line.length}` : "plan-empty"} mapRef={map}
+          planner.line && <RouteRide key={planner.line ? `plan-${planner.line[0]}-${planner.line.length}` : "plan-empty"} mapRef={map}
             lines={planner.line ? [planner.line] : []} name="Planned route" ready={mapReady && !planner.planning}
             previewTarget="selection" previewOptions={[{ value: "selection", label: "Planned route" }]}
             previewNote="Follows the planned line. It is computer-generated, not a known skin track."

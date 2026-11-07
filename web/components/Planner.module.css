@@ -223,3 +223,13 @@
 .legendOverhead::after { content: ''; position: absolute; left: 5px; top: -4px; width: 8px; height: 8px; border-radius: 50%; border: 2px solid #f7941e; background: var(--paper); }
 .profileBar:focus-visible { outline: none; }
 .profileBar:focus-visible rect:nth-child(2) { stroke: var(--ink); stroke-width: 2px; }
+
+/* Route / Forecast tabs */
+.tabs { display: flex; gap: 2px; padding: 3px; border-radius: 10px; background: var(--surface); }
+.tabs > button { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 6px; border-radius: 8px; border: 1px solid transparent; font-size: 12px !important; font-weight: 550 !important; color: var(--muted); position: relative; }
+.tabs > button:hover { color: var(--ink); }
+.tabs > button[aria-selected=true] { background: var(--paper); border-color: var(--line); color: var(--ink); box-shadow: 0 1px 4px #1a2d3a14; }
+.tabChip { display: grid; place-items: center; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 5px; font-size: 10px; font-weight: 800; box-shadow: inset 0 0 0 1px #0000001a; }
+.tabAlert { width: 7px; height: 7px; border-radius: 50%; background: #c25414; box-shadow: 0 0 0 2px var(--paper); position: absolute; top: 6px; right: 10px; }
+.tabPanel { display: flex; flex-direction: column; gap: 14px; }
+.tabPanel > .forecast { border-top: 0; padding-top: 0; }
