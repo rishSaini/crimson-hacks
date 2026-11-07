@@ -5,7 +5,10 @@ import Map, { Layer, Marker, NavigationControl, ScaleControl, Source, type MapRe
 import { setWorkerUrl, type StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { api, type EndpointSuggestionsResponse, type SuggestionsRequest, type SuggestionsResponse } from "@/lib/api";
+import { PlannerLayers } from "@/components/PlannerLayers";
+import { PlannerPanel } from "@/components/PlannerPanel";
 import { RouteRide } from "@/components/RouteRide";
+import { useRoutePlanner } from "@/lib/useRoutePlanner";
 
 setWorkerUrl(new URL("maplibre-gl/dist/maplibre-gl-worker.mjs", import.meta.url).toString());
 
@@ -78,6 +81,8 @@ export function RoutePreview({ samples, demo, matchSketch }: {
   demo: SuggestionsRequest;
   matchSketch: Position[];
 }) {
+  const planner = useRoutePlanner();
+  const [tool, setTool] = useState<"plan" | "sections">("plan");
   const map = useRef<MapRef>(null);
   const mapSection = useRef<HTMLElement>(null);
   const [sample, setSample] = useState(samples[0]);
@@ -179,13 +184,15 @@ export function RoutePreview({ samples, demo, matchSketch }: {
           mapStyle={MAP_STYLE}
           initialViewState={{ longitude: -111.681, latitude: 40.5585, zoom: 12.8 }}
           style={{ width: "100%", height: "100%" }}
-          cursor={drawing ? "crosshair" : "grab"}
+          cursor={drawing || tool === "plan" ? "crosshair" : "grab"}
           onLoad={() => {
             frame(sample.lines.flat());
             setMapReady(true);
           }}
           onClick={(event) => {
-            if (drawing && !busy) {
+            if (tool === "plan") {
+              planner.placePoint([event.lngLat.lng, event.lngLat.lat]);
+            } else if (drawing && !busy) {
               const points: Position[] = [...sketch, [event.lngLat.lng, event.lngLat.lat]];
               updateSketch(points);
               if (mode === "pins" && points.length === 2) setDrawing(false);
@@ -194,13 +201,14 @@ export function RoutePreview({ samples, demo, matchSketch }: {
         >
           <NavigationControl position="top-right" showCompass={false} />
           <ScaleControl position="bottom-left" unit="metric" />
-          <Source id="source-sample" type="geojson" data={sampleData}>
+          {tool === "plan" && <PlannerLayers planner={planner} />}
+          {tool === "sections" && <Source id="source-sample" type="geojson" data={sampleData}>
             <Layer id="source-outline" type="line" paint={{ "line-color": "#172554", "line-width": 6 }} />
             <Layer id="source-line" type="line" paint={{ "line-color": "#38bdf8", "line-width": 3.5 }} />
             <Layer id="source-points" type="circle" filter={["==", ["geometry-type"], "Point"]} paint={{
               "circle-color": "#38bdf8", "circle-radius": 4, "circle-stroke-color": "#172554", "circle-stroke-width": 2,
             }} />
-          </Source>
+          </Source>}
           {mode === "pins" && sketch.map(([longitude, latitude], index) => (
             <Marker key={index} longitude={longitude} latitude={latitude} anchor="bottom">
               <span className="flex size-7 items-center justify-center rounded-full border-2 border-white bg-violet-700 text-xs font-bold text-white shadow"
@@ -236,16 +244,18 @@ export function RoutePreview({ samples, demo, matchSketch }: {
           )}
         </Map>
         <RouteRide
-          key={suggestion?.id ?? sample.id}
+          key={tool === "plan" && planner.line ? `plan-${planner.line[0]}-${planner.line.length}` : suggestion?.id ?? sample.id}
           mapRef={map}
-          lines={suggestion ? [suggestion.route.coordinates] : sample.lines}
-          name={suggestion?.name ?? sample.name}
+          lines={tool === "plan" && planner.line ? [planner.line] : suggestion ? [suggestion.route.coordinates] : sample.lines}
+          name={tool === "plan" && planner.line ? "Planned route" : suggestion?.name ?? sample.name}
           ready={mapReady}
         />
         <div className="pointer-events-none absolute left-3 top-3 max-w-[70%] rounded-lg bg-slate-950/90 p-3 text-xs shadow-lg">
           <p className="font-semibold">Little Cottonwood Canyon</p>
           {!mapReady && <p className="mt-1">Loading terrain map…</p>}
-          <p className="mt-1 text-sky-300">Blue · Source sample</p>
+          {tool === "plan"
+            ? <p className="mt-1">{planner.points.length < 2 ? (planner.points.length === 0 ? "Click to place the start." : "Click to place the destination.") : "Drag A or B to change the route."}</p>
+            : <p className="mt-1 text-sky-300">Blue · Source sample</p>}
           {sketch.length > 0 && <p className="text-violet-300">{mode === "pins" ? "A · Start    B · Destination" : "Purple dash · Your sketch"}</p>}
           {!!original?.totals.flagged_stretch_count && <p className="text-rose-300">Rose · Flagged sketch sections</p>}
           {suggestion && <p className="text-orange-300">Orange · Mapped match</p>}
@@ -264,8 +274,16 @@ export function RoutePreview({ samples, demo, matchSketch }: {
         <header>
           <p className="text-xs font-semibold tracking-wider text-sky-300">REDRUN · LOCAL PREVIEW</p>
           <h1 className="mt-1 text-2xl font-semibold">Route explorer</h1>
-          <p className="mt-1 text-sm text-slate-300">Pick two points, check mapped ski sections, and preview the terrain.</p>
+          <p className="mt-1 text-sm text-slate-300">Click two points for a route, see where the forecast flags it, then reroute around those stretches.</p>
         </header>
+        <div role="group" aria-label="Tool" className="flex gap-2">
+          {(["plan", "sections"] as const).map((option) => (
+            <button type="button" key={option} aria-pressed={tool === option}
+              className={`${CONTROL} ${tool === option ? "bg-slate-700" : ""}`}
+              onClick={() => setTool(option)}>{option === "plan" ? "Plan a route" : "Mapped sections"}</button>
+          ))}
+        </div>
+        {tool === "plan" ? <PlannerPanel planner={planner} /> : <>
         <section aria-labelledby="sample-label" className="space-y-3">
           <div>
             <label id="sample-label" htmlFor="source-sample" className="block text-sm font-semibold">
@@ -399,6 +417,7 @@ export function RoutePreview({ samples, demo, matchSketch }: {
             </section>
           )}
         </div>
+        </>}
       </aside>
     </main>
   );

@@ -12,6 +12,7 @@ from app.models import (
     LineString,
     PlanRequest,
     PlanResponse,
+    RouteTotals,
 )
 from app.route_analysis import TO_UTM, TerrainGrids, analyze_route
 from app.route_search import OsmLayers, build_cost_grid, crop_window, least_cost_line
@@ -33,11 +34,21 @@ def to_lng_lat(line_xy: list[tuple[float, float]]) -> LineString:
     return LineString(coordinates=list(zip(lngs, lats)))
 
 
-def found_message(stretches: int, flagged_m: float) -> str:
-    if stretches == 0:
-        return "No flags found on this route today."
-    noun = "stretch crosses" if stretches == 1 else "stretches cross"
-    return f"{stretches} {noun} flagged terrain ({round(flagged_m)} m)."
+def found_message(totals: RouteTotals) -> str:
+    if totals.flagged_stretch_count > 0:
+        count = totals.flagged_stretch_count
+        noun = "stretch crosses" if count == 1 else "stretches cross"
+        return f"{count} {noun} flagged terrain ({round(totals.flagged_length_m)} m)."
+    if totals.steep_stretch_count > 0:
+        # Steep terrain rated below the setting. It's listed, and it's not "no flags".
+        count = totals.steep_stretch_count
+        noun = "stretch" if count == 1 else "stretches"
+        ratings = " to ".join(rating.capitalize() for rating in totals.steep_ratings)
+        return (
+            f"{count} {noun} in avalanche terrain, rated {ratings} today "
+            f"({round(totals.steep_length_m)} m). Not rerouted by default."
+        )
+    return "No flags found on this route today."
 
 
 def plan_route(
@@ -67,7 +78,7 @@ def plan_route(
     return PlanResponse(
         **common,
         status="found",
-        message=found_message(analysis.totals.flagged_stretch_count, analysis.totals.flagged_length_m),
+        message=found_message(analysis.totals),
         route=route,
         analysis=analysis,
     )
