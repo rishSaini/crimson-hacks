@@ -16,6 +16,7 @@ import {
   uncoloredAlternativeLayer,
   unanalyzedLineLayer,
 } from "@/lib/segment-style";
+import { StretchPins } from "@/components/map/StretchPins";
 
 const lineCollection = (coords: LngLat[]) => ({
   type: "FeatureCollection" as const,
@@ -141,6 +142,7 @@ function UncoloredAlternative({ coords }: { coords: LngLat[] }) {
  *   white unanalyzed line, and the camera moves to the sample route.
  * - Rerouted: the original as a dashed gray ghost and the new line in its own
  *   segment colors (solid white if it couldn't be analyzed).
+ * - Numbered pins mark the flagged stretches of whichever line is colored.
  */
 export function DrawRouteLayers({ route, reroute }: { route: RouteDrawing; reroute: Reroute }) {
   const { current: map } = useMap();
@@ -177,10 +179,16 @@ export function DrawRouteLayers({ route, reroute }: { route: RouteDrawing; rerou
       <>
         <GhostRoute segments={segments} />
         {rerouted.analysis ? (
-          <AnalyzedRoute
-            segments={rerouted.analysis.segments.features}
-            sourceId={SOURCE_IDS.alternative}
-          />
+          <>
+            <AnalyzedRoute
+              segments={rerouted.analysis.segments.features}
+              sourceId={SOURCE_IDS.alternative}
+            />
+            <StretchPins
+              stretches={rerouted.analysis.flagged_stretches}
+              segments={rerouted.analysis.segments.features}
+            />
+          </>
         ) : (
           <UncoloredAlternative coords={alternativeCoords} />
         )}
@@ -193,7 +201,12 @@ export function DrawRouteLayers({ route, reroute }: { route: RouteDrawing; rerou
       {(!segments || offline) && (
         <DraftRoute points={points} showWaypoints={isDrawing} unanalyzed={offline && !!segments} />
       )}
-      {segments && <AnalyzedRoute segments={segments} />}
+      {segments && analysis && (
+        <>
+          <AnalyzedRoute segments={segments} />
+          <StretchPins stretches={analysis.data.flagged_stretches} segments={segments} />
+        </>
+      )}
     </>
   );
 }

@@ -28,6 +28,8 @@ const FOG = {
 };
 
 type MapViewProps = {
+  /** Map id for useMap() outside the map, under a MapProvider. */
+  id?: string;
   /** Route layers and markers for the current mode. */
   children?: ReactNode;
   /** Crosshair cursor and no double-click zoom, so clicks can drop waypoints. */
@@ -37,7 +39,7 @@ type MapViewProps = {
 };
 
 /** The 3D terrain map. Modes put their layers inside it as children. */
-export function MapView({ children, drawing = false, onClick, onDblClick }: MapViewProps) {
+export function MapView({ id, children, drawing = false, onClick, onDblClick }: MapViewProps) {
   if (!MAPBOX_TOKEN) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center text-sm text-neutral-500">
@@ -48,6 +50,7 @@ export function MapView({ children, drawing = false, onClick, onDblClick }: MapV
 
   return (
     <Map
+      id={id}
       mapboxAccessToken={MAPBOX_TOKEN}
       mapStyle={basemap.mapStyle}
       initialViewState={INITIAL_VIEW}

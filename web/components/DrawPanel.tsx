@@ -2,6 +2,7 @@
 
 import { ComparisonCard } from "@/components/ComparisonCard";
 import { RerouteButton } from "@/components/RerouteButton";
+import { SegmentList } from "@/components/SegmentList";
 import { DrawControls } from "@/components/map/DrawControls";
 import { RouteStatus } from "@/components/map/RouteStatus";
 import type { Reroute } from "@/hooks/useReroute";
@@ -23,6 +24,9 @@ type Props = {
 export function DrawPanel({ route, reroute, forecast, forcedByWarning, showReroute }: Props) {
   const { phase, points, analysis, error } = route;
   const rerouteState = reroute.state;
+  // List the line that's colored on the map: the reroute once it's analyzed.
+  const reroutedAnalysis =
+    rerouteState.status === "done" ? rerouteState.result.analysis : null;
 
   const adoptReroute = () => {
     if (rerouteState.status !== "done") return;
@@ -70,6 +74,14 @@ export function DrawPanel({ route, reroute, forecast, forcedByWarning, showRerou
           onUse={adoptReroute}
           onUndo={reroute.undo}
           onRetry={reroute.start}
+        />
+      )}
+
+      {phase === "analyzed" && analysis && (
+        <SegmentList
+          key={reroutedAnalysis ? "reroute" : "route"}
+          segments={(reroutedAnalysis ?? analysis.data).segments.features}
+          heading={reroutedAnalysis ? "Segments on the new line" : "Segments on your route"}
         />
       )}
     </div>
