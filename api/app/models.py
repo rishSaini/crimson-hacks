@@ -315,7 +315,7 @@ class BriefingRequest(ApiModel):
 class BriefingItem(ApiModel):
     segment_id: int
     avalanche_problem: str
-    note: str = Field(description="LLM output, so it must never call terrain safe")
+    note: str = Field(description="LLM output, checked by reject_safe_language")
 
     _no_safe_note = field_validator("note")(reject_safe_language)
 

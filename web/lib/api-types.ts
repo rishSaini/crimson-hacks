@@ -200,7 +200,7 @@ export interface components {
             avalanche_problem: string;
             /**
              * Note
-             * @description LLM output, so it must never call terrain safe
+             * @description LLM output, checked by reject_safe_language
              */
             note: string;
         };
