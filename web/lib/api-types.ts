@@ -58,6 +58,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Plan */
+        post: operations["plan_plan_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/alternative": {
         parameters: {
             query?: never;
@@ -387,6 +404,73 @@ export interface components {
                 number,
                 number
             ][];
+        };
+        /** PlanRequest */
+        PlanRequest: {
+            /** Start */
+            start: [
+                number,
+                number
+            ];
+            /** End */
+            end: [
+                number,
+                number
+            ];
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Avoid At Or Above
+             * @description Lowest rating to flag. It changes the flags, never the line
+             * @default considerable
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
+        };
+        /**
+         * PlanResponse
+         * @description A line chosen from terrain alone, with the forecast's flags on it from /analyze.
+         */
+        PlanResponse: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "uac_live" | "demo_replay" | "fixture";
+            /**
+             * Avoid At Or Above
+             * @description The setting actually applied
+             * @enum {string}
+             */
+            avoid_at_or_above: "considerable" | "moderate" | "low";
+            /**
+             * Forced By Warning
+             * @description An Avalanche Warning forced low for this forecast day
+             */
+            forced_by_warning: boolean;
+            /**
+             * Status
+             * @description no_route means terrain alone blocks every way between the points
+             * @enum {string}
+             */
+            status: "found" | "no_route";
+            /** Message */
+            message: string;
+            route?: components["schemas"]["LineString"] | null;
+            /** @description The /analyze result for route, which can include flags */
+            analysis?: components["schemas"]["AnalyzeResponse"] | null;
+            /** Limitations */
+            limitations: string[];
+            /** Attribution */
+            attribution: string;
         };
         /** RoseCell */
         RoseCell: {
@@ -751,6 +835,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SuggestionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    plan_plan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PlanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PlanResponse"];
                 };
             };
             /** @description Validation Error */

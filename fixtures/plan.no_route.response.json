@@ -1,0 +1,15 @@
+{
+  "date": "2026-02-21",
+  "source": "demo_replay",
+  "avoid_at_or_above": "considerable",
+  "forced_by_warning": false,
+  "status": "no_route",
+  "message": "No route: slopes of 45 degrees or more block every way between these points within 1.5 km.",
+  "route": null,
+  "analysis": null,
+  "limitations": [
+    "Computer-generated line, not a known skin track. Check it against a map.",
+    "This line follows the terrain, not the forecast. It does not remove avalanche risk."
+  ],
+  "attribution": "\u00a9 OpenStreetMap contributors (ODbL)"
+}

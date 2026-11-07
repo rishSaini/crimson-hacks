@@ -19,8 +19,12 @@ from app.models import (
     BriefingRequest,
     BriefingResponse,
     ForecastResponse,
+    PlanRequest,
+    PlanResponse,
 )
 from app.route_analysis import TerrainCoverageError, TerrainGrids, analyze_route, load_grids
+from app.route_planning import plan_route
+from app.route_search import load_osm
 from app.route_suggestions import (
     SuggestionsRequest, SuggestionsResponse, load_catalog, suggest_routes,
 )
@@ -88,6 +92,19 @@ def suggestions(request: SuggestionsRequest) -> SuggestionsResponse:
         raise HTTPException(503, "The route catalog is unavailable.") from error
     try:
         return suggest_routes(request, forecast, grids, catalog)
+    except TerrainCoverageError as error:
+        raise HTTPException(422, str(error)) from error
+
+
+@app.post("/plan")
+def plan(request: PlanRequest) -> PlanResponse:
+    forecast, grids = terrain_context(request.date)
+    try:
+        osm = load_osm()
+    except (OSError, ValueError) as error:
+        raise HTTPException(503, "The trail and ski area data is unavailable.") from error
+    try:
+        return plan_route(request, forecast, grids, osm)
     except TerrainCoverageError as error:
         raise HTTPException(422, str(error)) from error
 
